@@ -1,0 +1,28 @@
+{
+	"$schema": "../node_modules/@companion-module/base/assets/manifest.schema.json",
+	"type": "connection",
+	"id": "globalaudiosolutions-rita",
+	"name": "globalaudiosolutions-rita",
+	"shortname": "rita",
+	"description": "Control RiTA (Global Audio Solutions): generator, measurement engines, memories and globalDSP",
+	"version": "0.0.0",
+	"license": "MIT",
+	"repository": "git+https://github.com/telecomario93/companion-module-globalaudiosolutions-rita.git",
+	"bugs": "https://github.com/telecomario93/companion-module-globalaudiosolutions-rita/issues",
+	"maintainers": [
+		{
+			"name": "telecomario93",
+			"email": "mario@gaudiosolutions.com"
+		}
+	],
+	"runtime": {
+		"type": "node22",
+		"api": "nodejs-ipc",
+		"apiVersion": "0.0.0",
+		"entrypoint": "../dist/index.js"
+	},
+	"legacyIds": [],
+	"manufacturer": "Global Audio Solutions",
+	"products": ["RiTA"],
+	"keywords": ["audio", "measurement", "acoustics", "dsp", "fft"]
+}
