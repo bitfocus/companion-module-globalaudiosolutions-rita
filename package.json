@@ -12,7 +12,7 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/telecomario93/companion-module-globalaudiosolutions-rita.git"
+		"url": "git+https://github.com/bitfocus/companion-module-globalaudiosolutions-rita.git"
 	},
 	"engines": {
 		"node": "^22.20"
