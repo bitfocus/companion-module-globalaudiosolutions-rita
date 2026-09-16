@@ -11,7 +11,7 @@ Controls RiTA through its WebSocket API (`ws://<ip>:26101/api/v1/`).
 
 ### Actions
 
-- **Generator**: Spectrum on/off, signal, gain, duration, outputs.
+- **Generator**: Spectrum / Live TF on/off, signal, gain, duration, outputs.
 - **Settings**: FFT size, window, smoothing, spectrum averages, averaging, sum, plot style, coherence threshold.
 - **Measurement**: capture, activate engine, find delay, set delay, set inputs, rename.
 - **Memory**: store the trace of an engine, show/hide, rename, delete.
@@ -20,9 +20,11 @@ Controls RiTA through its WebSocket API (`ws://<ip>:26101/api/v1/`).
 
 **Capture** measures on an engine with the current signal, and turns the engine on:
 - With Sweep, Multi Sweep, Pink or External it measures once. RiTA does not answer anything while it measures; the module waits for the estimated duration and then writes the result (or the error RiTA reports) to the log.
-- With Spectrum it starts measuring continuously on that engine (or adds the engine if Spectrum is already running) until the generator is stopped. RiTA keeps answering while it runs.
+- With Spectrum or Live TF it starts measuring continuously on that engine (or adds the engine if it is already running) until the generator is stopped. RiTA keeps answering while it runs.
 
-**Spectrum on/off** selects Spectrum if needed and measures it on the chosen engine; off stops Spectrum on every engine. To remove a single engine, deactivate it with **Measurement: activate engine**.
+**Spectrum / Live TF on/off** selects the chosen signal if needed and measures it on the chosen engine; off stops it on every engine. To remove a single engine, deactivate it with **Measurement: activate engine**.
+
+**Measurement: set inputs** sets the measurement input of that engine only. In 1 Ref. Channel mode the reference input goes to all eight engines.
 
 **EQ filters** start disabled in RiTA: a filter that is not enabled is stored but does not sound. Gain applies to Parametric and the shelving types, order to APF and FIR RevPhase.
 

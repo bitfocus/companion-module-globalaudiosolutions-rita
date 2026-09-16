@@ -5,6 +5,7 @@ import type { RitaAction } from './api.js'
 import { DSP_PROPS, ENGINE_PROPS } from './state.js'
 import {
 	CHANNEL_CHOICES,
+	CONTINUOUS_SIGNAL_CHOICES,
 	DURATION_CHOICES,
 	ENGINE_CHOICES,
 	FFT_SIZE_CHOICES,
@@ -82,12 +83,12 @@ export function UpdateActions(self: ModuleInstance): void {
 	}
 
 	// Sweep, Multi Sweep, Pink and External measure once and block RiTA until done;
-	// Spectrum answers continuous:true and keeps running until the generator is stopped.
+	// Spectrum and Live TF answer continuous:true and keep running until the generator is stopped.
 	const capture = async (engine: number): Promise<void> => {
 		const response = await send('capture', `measurements/${engine}`)
 		if (!response) return
 		if (response.continuous) {
-			self.log('info', `Spectrum running on engine ${engine}`)
+			self.log('info', `${response.signal ?? 'Continuous measurement'} running on engine ${engine}`)
 			await self.refresh('generator')
 			await self.refresh(`measurements/${engine}`, ENGINE_PROPS)
 		} else {
@@ -114,17 +115,25 @@ export function UpdateActions(self: ModuleInstance): void {
 
 	const actions: CompanionActionDefinitions<ActionsSchema> = {
 		generator_spectrum: {
-			name: 'Generator: Spectrum on / off',
+			name: 'Generator: Spectrum / Live TF on / off',
 			description:
-				'On: selects Spectrum and measures it on the chosen engine, adding the engine if Spectrum is already running. Off: stops Spectrum on every engine.',
-			options: [modeOption, engineOption],
+				'On: selects the signal and measures it continuously on the chosen engine, adding the engine if it is already running. Off: stops it on every engine.',
+			options: [
+				modeOption,
+				{ type: 'dropdown', id: 'signal', label: 'Signal', default: 'Spectrum', choices: CONTINUOUS_SIGNAL_CHOICES },
+				engineOption,
+			],
 			callback: async ({ options }) => {
-				if (!resolveBool(options.mode, self.state.generator.running)) {
+				const signal = String(options.signal ?? 'Spectrum')
+				const { running, signal: current } = self.state.generator
+				if (!resolveBool(options.mode, running === true && current === signal)) {
 					await send('set', 'generator', { running: false })
 					return
 				}
-				if (self.state.generator.signal !== 'Spectrum') {
-					if (!(await send('set', 'generator', { signal: 'Spectrum' }))) return
+				if (current !== signal) {
+					// Switching Spectrum <-> Live TF: stop the loop before changing the signal.
+					if (running && !(await send('set', 'generator', { running: false }))) return
+					if (!(await send('set', 'generator', { signal }))) return
 				}
 				await capture(Number(options.engine ?? 1))
 			},
@@ -225,7 +234,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Measurement: capture',
 			description:
 				'Turns the engine on and measures with the current signal. Sweep, Multi Sweep, Pink and External measure once ' +
-				'and RiTA does not answer anything else until they finish. Spectrum keeps measuring until the generator is stopped.',
+				'and RiTA does not answer anything else until they finish. Spectrum and Live TF keep measuring until the generator is stopped.',
 			options: [engineOption],
 			callback: async ({ options }) => {
 				await capture(Number(options.engine))
@@ -268,7 +277,7 @@ export function UpdateActions(self: ModuleInstance): void {
 		measurement_inputs: {
 			name: 'Measurement: set inputs',
 			description:
-				'Sound card input channels. In 1 Ref. Channel mode RiTA applies the reference (and, with a two-input card, the measurement input) to all eight engines.',
+				'Sound card input channels of the engine. In 1 Ref. Channel mode RiTA applies the reference input to all eight engines.',
 			options: [
 				engineOption,
 				{ type: 'number', id: 'measurementInput', label: 'Measurement input', default: 1, min: 1, max: 64, asInteger: true },
