@@ -2,21 +2,22 @@ import type { CompanionActionDefinitions } from '@companion-module/base'
 import type ModuleInstance from './index.js'
 import type { ActionsSchema } from './index.js'
 import type { RitaAction } from './api.js'
+import { DSP_PROPS, ENGINE_PROPS } from './state.js'
 import {
 	CHANNEL_CHOICES,
 	DURATION_CHOICES,
 	ENGINE_CHOICES,
 	FFT_SIZE_CHOICES,
-	FILTER_TYPE_CHOICES,
-	GENERATOR_OUTPUT_CHOICES,
 	ON_OFF_TOGGLE_CHOICES,
-	PEQ_SLOT_CHOICES,
+	PEQ_GAIN_TYPES,
+	PEQ_TYPE_CHOICES,
 	RAW_ACTION_CHOICES,
 	SIGNAL_CHOICES,
 	SMOOTHING_CHOICES,
 	SPECTRUM_AVERAGES_CHOICES,
 	SPECTRUM_PLOT_CHOICES,
 	WINDOW_CHOICES,
+	XOVER_TYPE_CHOICES,
 } from './choices.js'
 
 function resolveBool(mode: unknown, current: boolean | undefined): boolean {
@@ -57,6 +58,16 @@ const memoryOption = {
 	useVariables: true,
 } as const
 
+const slotOption = {
+	type: 'number',
+	id: 'slot',
+	label: 'Filter (1-20)',
+	default: 1,
+	min: 1,
+	max: 20,
+	asInteger: true,
+} as const
+
 export function UpdateActions(self: ModuleInstance): void {
 	// Errors from RiTA (busy, unknown value, ...) are logged instead of thrown into Companion.
 	const send = async (action: RitaAction, target?: string, properties?: unknown): Promise<any> => {
@@ -70,31 +81,53 @@ export function UpdateActions(self: ModuleInstance): void {
 		}
 	}
 
-	const crossoverOptions = (defaultFrequency: number) => [
-		channelOption,
-		{ type: 'dropdown', id: 'filterType', label: 'Type', default: 'Linkwitz-Riley', choices: FILTER_TYPE_CHOICES },
-		{ type: 'number', id: 'frequency', label: 'Frequency (Hz)', default: defaultFrequency, min: 1, max: 30000 },
-		{ type: 'number', id: 'order', label: 'Order (Linkwitz-Riley: even only)', default: 4, min: 1, max: 8 },
-		{ type: 'number', id: 'q', label: 'Q', default: 0.707, min: 0.01, max: 100, step: 0.01 },
-	] as const
+	const crossoverOptions = (defaultFrequency: number) =>
+		[
+			channelOption,
+			{ type: 'dropdown', id: 'filterType', label: 'Type', default: 'Linkwitz-Riley', choices: XOVER_TYPE_CHOICES },
+			{ type: 'number', id: 'frequency', label: 'Frequency (Hz)', default: defaultFrequency, min: 20, max: 20000 },
+			{
+				type: 'number',
+				id: 'order',
+				label: 'Order (Linkwitz-Riley: even only)',
+				default: 4,
+				min: 1,
+				max: 8,
+				asInteger: true,
+			},
+			{ type: 'number', id: 'q', label: 'Q', default: 0.707, min: 0.1, max: 10, step: 0.01 },
+		] as const
 
 	const actions: CompanionActionDefinitions<ActionsSchema> = {
+		generator_spectrum: {
+			name: 'Generator: Spectrum on / off',
+			description:
+				'Runs the Spectrum signal until it is stopped. The other signals measure once: use Measurement: capture.',
+			options: [modeOption],
+			callback: async ({ options }) => {
+				const on = resolveBool(options.mode, self.state.generator.running)
+				if (on && self.state.generator.signal !== 'Spectrum') {
+					if (!(await send('set', 'generator', { signal: 'Spectrum' }))) return
+				}
+				await send('set', 'generator', { running: on })
+			},
+		},
 		generator_signal: {
 			name: 'Generator: set signal',
-			options: [{ type: 'dropdown', id: 'signal', label: 'Signal', default: 'Pink', choices: SIGNAL_CHOICES }],
+			options: [{ type: 'dropdown', id: 'signal', label: 'Signal', default: 'Sweep', choices: SIGNAL_CHOICES }],
 			callback: async ({ options }) => {
 				await send('set', 'generator', { signal: options.signal })
 			},
 		},
 		generator_gain: {
 			name: 'Generator: set gain',
-			options: [{ type: 'number', id: 'gain', label: 'Gain (dB)', default: -24, min: -96, max: 0, step: 0.5 }],
+			options: [{ type: 'number', id: 'gain', label: 'Gain (dB)', default: -24, min: -48, max: 0, step: 0.5 }],
 			callback: async ({ options }) => {
 				await send('set', 'generator', { gain: Number(options.gain) })
 			},
 		},
 		generator_duration: {
-			name: 'Generator: set sweep duration',
+			name: 'Generator: set duration',
 			options: [{ type: 'dropdown', id: 'duration', label: 'Duration', default: '2', choices: DURATION_CHOICES }],
 			callback: async ({ options }) => {
 				await send('set', 'generator', { duration: options.duration })
@@ -102,12 +135,13 @@ export function UpdateActions(self: ModuleInstance): void {
 		},
 		generator_outputs: {
 			name: 'Generator: set outputs',
+			description: 'Sound card output channels. RiTA only accepts channels the card has.',
 			options: [
-				{ type: 'dropdown', id: 'output1', label: 'Output 1', default: '1', choices: GENERATOR_OUTPUT_CHOICES },
-				{ type: 'dropdown', id: 'output2', label: 'Output 2', default: '2', choices: GENERATOR_OUTPUT_CHOICES },
+				{ type: 'number', id: 'output1', label: 'Output 1', default: 1, min: 1, max: 64, asInteger: true },
+				{ type: 'number', id: 'output2', label: 'Output 2', default: 2, min: 1, max: 64, asInteger: true },
 			],
 			callback: async ({ options }) => {
-				await send('set', 'generator', { output1: options.output1, output2: options.output2 })
+				await send('set', 'generator', { output1: String(options.output1), output2: String(options.output2) })
 			},
 		},
 
@@ -173,7 +207,7 @@ export function UpdateActions(self: ModuleInstance): void {
 		measurement_capture: {
 			name: 'Measurement: capture',
 			description:
-				'Turns the engine on and measures with the current generator signal (not Spectrum or TF). ' +
+				'Turns the engine on and measures once with the current signal (Sweep, Multi Sweep, Pink or External). ' +
 				'RiTA does not answer anything else until it finishes.',
 			options: [engineOption],
 			callback: async ({ options }) => {
@@ -218,16 +252,19 @@ export function UpdateActions(self: ModuleInstance): void {
 		},
 		measurement_inputs: {
 			name: 'Measurement: set inputs',
+			description:
+				'Sound card input channels. In 1 Ref. Channel mode RiTA applies the reference (and, with a two-input card, the measurement input) to all eight engines.',
 			options: [
 				engineOption,
-				{ type: 'number', id: 'measurementInput', label: 'Measurement input', default: 1, min: 1, max: 64 },
-				{ type: 'number', id: 'referenceInput', label: 'Reference input', default: 2, min: 1, max: 64 },
+				{ type: 'number', id: 'measurementInput', label: 'Measurement input', default: 1, min: 1, max: 64, asInteger: true },
+				{ type: 'number', id: 'referenceInput', label: 'Reference input', default: 2, min: 1, max: 64, asInteger: true },
 			],
 			callback: async ({ options }) => {
-				await send('set', `measurements/${options.engine}`, {
+				const response = await send('set', `measurements/${options.engine}`, {
 					measurementInput: Number(options.measurementInput),
 					referenceInput: Number(options.referenceInput),
 				})
+				if (response?.note) self.log('info', `Engine ${options.engine} inputs: ${response.note}`)
 			},
 		},
 		measurement_name: {
@@ -278,7 +315,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'DSP: set channel gain',
 			options: [
 				channelOption,
-				{ type: 'number', id: 'gain', label: 'Gain (dB)', default: 0, min: -96, max: 24, step: 0.1 },
+				{ type: 'number', id: 'gain', label: 'Gain (dB)', default: 0, min: -60, max: 60, step: 0.1 },
 			],
 			callback: async ({ options }) => {
 				await send('set', `dsp/out/${options.channel}`, { gain: Number(options.gain) })
@@ -294,17 +331,18 @@ export function UpdateActions(self: ModuleInstance): void {
 				const channel = Number(options.channel)
 				const current = self.state.dsp[channel]?.gain
 				if (current === undefined) {
-					self.log('warn', `DSP channel ${channel} gain is not known yet; enable polling or wait for it`)
+					self.log('warn', `DSP channel ${channel} gain is not known yet`)
 					return
 				}
-				await send('set', `dsp/out/${channel}`, { gain: Math.round((current + Number(options.step)) * 100) / 100 })
+				const next = Math.min(60, Math.max(-60, Math.round((current + Number(options.step)) * 100) / 100))
+				await send('set', `dsp/out/${channel}`, { gain: next })
 			},
 		},
 		dsp_delay: {
 			name: 'DSP: set channel delay',
 			options: [
 				channelOption,
-				{ type: 'number', id: 'delay', label: 'Delay (ms)', default: 0, min: 0, max: 1000, step: 0.01 },
+				{ type: 'number', id: 'delay', label: 'Delay (ms)', default: 0, min: 0, max: 680, step: 0.01 },
 			],
 			callback: async ({ options }) => {
 				await send('set', `dsp/out/${options.channel}`, { delay: Number(options.delay) })
@@ -327,23 +365,71 @@ export function UpdateActions(self: ModuleInstance): void {
 				await send('set', `dsp/out/${options.channel}`, { name: String(options.name) })
 			},
 		},
+		dsp_clear: {
+			name: 'DSP: clear channel',
+			description: 'Same as the Clear button of the row: resets the channel and also clears that engine measurement.',
+			options: [channelOption],
+			callback: async ({ options }) => {
+				const channel = Number(options.channel)
+				if ((await send('clear', `dsp/out/${channel}`)) === undefined) return
+				await self.refresh(`dsp/out/${channel}`, DSP_PROPS)
+				await self.refresh(`measurements/${channel}`, ENGINE_PROPS)
+			},
+		},
 		dsp_peq: {
-			name: 'DSP: set parametric EQ',
+			name: 'DSP: set EQ filter',
+			description: 'One of the 20 filters of the PEQ window. A filter that is not enabled is stored but does not sound.',
 			options: [
 				channelOption,
-				{ type: 'dropdown', id: 'slot', label: 'Slot', default: '1', choices: PEQ_SLOT_CHOICES },
-				{ type: 'dropdown', id: 'filterType', label: 'Type', default: 'Parametric', choices: FILTER_TYPE_CHOICES },
-				{ type: 'number', id: 'frequency', label: 'Frequency (Hz)', default: 1000, min: 1, max: 30000 },
-				{ type: 'number', id: 'gain', label: 'Gain (dB)', default: 0, min: -30, max: 30, step: 0.1 },
-				{ type: 'number', id: 'q', label: 'Q (slope for shelving)', default: 1, min: 0.01, max: 100, step: 0.01 },
+				slotOption,
+				{ type: 'checkbox', id: 'enabled', label: 'Enabled', default: true },
+				{ type: 'dropdown', id: 'filterType', label: 'Type', default: 'Parametric', choices: PEQ_TYPE_CHOICES },
+				{ type: 'number', id: 'frequency', label: 'Frequency (Hz)', default: 1000, min: 20, max: 20000 },
+				{
+					type: 'number',
+					id: 'gain',
+					label: 'Gain (dB), Parametric and shelving only',
+					default: 0,
+					min: -20,
+					max: 20,
+					step: 0.1,
+				},
+				{
+					type: 'number',
+					id: 'order',
+					label: 'Order, APF and FIR RevPhase only',
+					default: 1,
+					min: 1,
+					max: 2,
+					asInteger: true,
+				},
+				{ type: 'number', id: 'q', label: 'Q', default: 1, min: 0.1, max: 10, step: 0.01 },
 			],
 			callback: async ({ options }) => {
-				await send('set', `dsp/out/${options.channel}/peq/${options.slot}`, {
-					type: options.filterType,
+				const type = String(options.filterType)
+				const properties: Record<string, unknown> = {
+					type,
+					enabled: options.enabled !== false,
 					frequency: Number(options.frequency),
-					gain: Number(options.gain),
 					q: Number(options.q),
-				})
+				}
+				if (PEQ_GAIN_TYPES.includes(type)) properties.gain = Number(options.gain)
+				else properties.order = Number(options.order)
+				await send('set', `dsp/out/${options.channel}/peq/${Number(options.slot)}`, properties)
+			},
+		},
+		dsp_peq_enabled: {
+			name: 'DSP: EQ filter on / off',
+			options: [channelOption, slotOption, modeOption],
+			callback: async ({ options }) => {
+				const target = `dsp/out/${options.channel}/peq/${Number(options.slot)}`
+				let enabled = options.mode === 'on'
+				if (options.mode === 'toggle') {
+					const current = await send('get', target, ['enabled'])
+					if (!current) return
+					enabled = !current.enabled
+				}
+				await send('set', target, { enabled })
 			},
 		},
 		dsp_highpass: {
@@ -375,13 +461,13 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Advanced: send API command',
 			description: 'Sends any request to RiTA, for objects this module does not cover yet.',
 			options: [
-				{ type: 'dropdown', id: 'action', label: 'Action', default: 'set', choices: RAW_ACTION_CHOICES },
+				{ type: 'dropdown', id: 'action', label: 'Action', default: 'get', choices: RAW_ACTION_CHOICES },
 				{ type: 'textinput', id: 'target', label: 'Target', default: 'generator', useVariables: true },
 				{
 					type: 'textinput',
 					id: 'properties',
 					label: 'Properties (JSON, optional)',
-					default: '{"running": true}',
+					default: '',
 					useVariables: true,
 				},
 			],

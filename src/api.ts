@@ -2,7 +2,7 @@ import WebSocket from 'ws'
 import { InstanceStatus, type LogLevel } from '@companion-module/base'
 import type { ModuleConfig, ModuleSecrets } from './config.js'
 
-export type RitaAction = 'get' | 'set' | 'capture' | 'delete' | 'findDelay'
+export type RitaAction = 'get' | 'set' | 'capture' | 'delete' | 'findDelay' | 'clear' | 'subscribe' | 'unsubscribe'
 
 export interface ModuleInstanceLike {
 	config: ModuleConfig
@@ -11,6 +11,7 @@ export interface ModuleInstanceLike {
 	updateStatus(status: InstanceStatus, message?: string | null): void
 	onConnected(): void
 	onDisconnected(): void
+	onEvent(target: string, properties: Record<string, unknown>): void
 }
 
 export class RitaError extends Error {
@@ -40,6 +41,7 @@ export class RitaClient {
 	private portOffset = 0
 	private destroyed = false
 	private login: Promise<void> | null = null
+	private loginRejected: string | null = null
 
 	constructor(private readonly module: ModuleInstanceLike) {}
 
@@ -88,11 +90,16 @@ export class RitaClient {
 			this.module.updateStatus(InstanceStatus.AuthenticationFailure, 'RiTA requires a password')
 			return Promise.reject(new Error('RiTA requires a password, but none is configured'))
 		}
+		// RiTA locks the connection after 5 wrong passwords, so a rejected one is not retried.
+		if (this.loginRejected) return Promise.reject(new RitaError(this.loginRejected))
 		this.login ??= this.request('set', 'session', { password })
 			.then(() => {
 				this.module.updateStatus(InstanceStatus.Ok)
 			})
 			.catch((err: Error) => {
+				if (err instanceof RitaError && (err.code === 'incorrect password' || err.code === 'too many attempts')) {
+					this.loginRejected = err.code
+				}
 				this.module.updateStatus(InstanceStatus.AuthenticationFailure, err.message)
 				throw err
 			})
@@ -198,6 +205,11 @@ export class RitaClient {
 			msg = JSON.parse(raw)
 		} catch {
 			this.module.log('warn', `Unparseable message from RiTA: ${raw.slice(0, 200)}`)
+			return
+		}
+
+		if (msg?.event === 'changed' && typeof msg.target === 'string') {
+			this.module.onEvent(msg.target, msg.properties ?? {})
 			return
 		}
 

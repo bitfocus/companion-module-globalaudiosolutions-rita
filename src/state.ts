@@ -31,6 +31,9 @@ export interface RitaState {
 export const CHANNEL_COUNT = 8
 export const ENGINE_COUNT = 8
 
+export const DSP_PROPS = ['name', 'gain', 'delay', 'polarity']
+export const ENGINE_PROPS = ['name', 'active', 'selected', 'delay', 'level']
+
 export function createEmptyState(): RitaState {
 	const state: RitaState = { generator: {}, dsp: {}, measurements: {} }
 	for (let i = 1; i <= CHANNEL_COUNT; i++) state.dsp[i] = {}

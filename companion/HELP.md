@@ -6,21 +6,25 @@ Controls RiTA through its WebSocket API (`ws://<ip>:26101/api/v1/`).
 
 - **RiTA IP address**: the machine running RiTA with the API enabled.
 - **Control port**: 26101 by default. RiTA serves one client per port, so the module tries this port and the next four.
-- **Password**: only if the API password is enabled in RiTA.
-- **Status poll interval**: RiTA does not push changes, so the generator, the 8 DSP channels and the 8 measurement engines are read at this interval to keep feedbacks and variables up to date. Set 0 to disable polling (actions still work, toggles and "adjust gain" will not).
+- **Password**: only if the API password is enabled in RiTA. If it is changed in RiTA while connected, the module logs in again on its own (within 30 s). A wrong password is not retried until the configuration is saved again, because RiTA locks the connection after 5 attempts.
+- **Level meter poll interval**: RiTA sends an event whenever something the module shows changes, except the engine level meters, which are read at this interval. On an older RiTA without events, everything is read at this interval.
 
 ### Actions
 
-- **Generator**: signal, gain, sweep duration, outputs.
+- **Generator**: Spectrum on/off, signal, gain, duration, outputs.
 - **Settings**: FFT size, window, smoothing, spectrum averages, averaging, sum, plot style, coherence threshold.
 - **Measurement**: capture, activate engine, find delay, set delay, set inputs, rename.
-
-**Capture** is how a measurement is started: it turns the engine on, prepares the current generator signal and runs it. It is rejected (`unknown value`) with Spectrum or TF selected, and with M-Noise at 44.1/48 kHz. Polling pauses for the estimated duration, then the result (or the error RiTA reports) is written to the module log.
 - **Memory**: store the trace of an engine, show/hide, rename, delete.
-- **DSP**: channel gain (absolute or step), delay, polarity, name, parametric EQ, high-pass and low-pass.
-- **Advanced: send API command**: any `get`/`set`/`capture`/`delete`/`findDelay` with a JSON properties field, for objects not covered above.
+- **DSP**: channel gain (absolute or step), delay, polarity, name, clear, EQ filter (1-20) and its on/off, high-pass and low-pass.
+- **Advanced: send API command**: any request with a JSON properties field, for objects not covered above.
 
-While a capture is running RiTA does not answer other requests; commands sent meanwhile are delayed until it finishes.
+**Capture** is how a measurement is started with Sweep, Multi Sweep, Pink or External: it turns the engine on, runs the signal once and stores the result. RiTA does not answer anything while it measures; the module waits for the estimated duration and then writes the result (or the error RiTA reports) to the log.
+
+**Spectrum on/off** selects the Spectrum signal if needed and runs it until it is stopped. RiTA keeps answering while it runs.
+
+**EQ filters** start disabled in RiTA: a filter that is not enabled is stored but does not sound. Gain applies to Parametric and the shelving types, order to APF and FIR RevPhase.
+
+**DSP: clear channel** is the Clear button of the row, and also clears that engine measurement.
 
 ### Feedbacks
 
@@ -31,3 +35,5 @@ Connected, generator running, generator signal, engine active, engine selected, 
 - `$(rita:generator_running)`, `generator_signal`, `generator_gain`, `generator_duration`, `generator_output1`, `generator_output2`
 - `$(rita:dsp_N_name)`, `dsp_N_gain`, `dsp_N_delay`, `dsp_N_polarity` for N = 1..8
 - `$(rita:meas_N_name)`, `meas_N_active`, `meas_N_delay`, `meas_N_level` for N = 1..8
+
+In Companion 5 the text shown on a button is set in the button's **Style** tab, **Text** element, **Button text string**.

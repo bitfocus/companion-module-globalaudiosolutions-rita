@@ -9,7 +9,6 @@ const numbered = (count: number, prefix: string): Choice[] =>
 
 export const CHANNEL_CHOICES = numbered(8, 'Channel')
 export const ENGINE_CHOICES = numbered(8, 'Engine')
-export const PEQ_SLOT_CHOICES = numbered(4, 'PEQ')
 
 export const ON_OFF_TOGGLE_CHOICES: Choice[] = [
 	{ id: 'on', label: 'On' },
@@ -17,9 +16,8 @@ export const ON_OFF_TOGGLE_CHOICES: Choice[] = [
 	{ id: 'toggle', label: 'Toggle' },
 ]
 
-export const SIGNAL_CHOICES = same(['Pink', 'Sweep', 'M-Noise', 'External', 'Spectrum', 'TF'])
-export const DURATION_CHOICES: Choice[] = ['1', '2', '5', '10'].map((v) => ({ id: v, label: `${v} s` }))
-export const GENERATOR_OUTPUT_CHOICES = same(['1', '2', '3', '4'])
+export const SIGNAL_CHOICES = same(['Sweep', 'Multi Sweep', 'Pink', 'External', 'Spectrum'])
+export const DURATION_CHOICES: Choice[] = ['1', '2', '4', '8', '16'].map((v) => ({ id: v, label: `${v} s` }))
 
 export const FFT_SIZE_CHOICES = same(['64 FPPO', '32768', '16384', '8192', '4096', '2048', '1024', '512', '256', '128'])
 export const WINDOW_CHOICES = same([
@@ -37,7 +35,11 @@ export const SMOOTHING_CHOICES = same(['None', '1/48 Oct', '1/24 Oct', '1/12 Oct
 export const SPECTRUM_AVERAGES_CHOICES = same(['1', '2', '4', '8', '16', '32'])
 export const SPECTRUM_PLOT_CHOICES = same(['Line', 'Bar'])
 
-export const FILTER_TYPE_CHOICES = same([
+export const PEQ_TYPE_CHOICES = same(['Parametric', 'Low Shelf', 'High Shelf', 'APF', 'FIR RevPhase'])
+// The G/O column of the EQ window is a gain on these types and an order on the rest.
+export const PEQ_GAIN_TYPES = ['Parametric', 'Low Shelf', 'High Shelf']
+
+export const XOVER_TYPE_CHOICES = same([
 	'None',
 	'Butterworth',
 	'Linkwitz-Riley',
@@ -45,14 +47,6 @@ export const FILTER_TYPE_CHOICES = same([
 	'Eliptic',
 	'Chebyshev I',
 	'Chebyshev II',
-	'APF',
-	'FIR GAS',
-	'Parametric',
-	'Chingonizer MK1',
-	'Chingonizer MK2',
-	'Low Shelf',
-	'High Shelf',
-	'FIR RevPhase',
 ])
 
-export const RAW_ACTION_CHOICES = same(['get', 'set', 'capture', 'delete', 'findDelay'])
+export const RAW_ACTION_CHOICES = same(['get', 'set', 'capture', 'delete', 'findDelay', 'clear'])
