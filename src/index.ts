@@ -101,8 +101,8 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 	applyResponse(target: string | undefined, response: unknown): void {
 		if (!target || !response || typeof response !== 'object') return
 		const body = response as Record<string, any>
-		// findDelay with apply:false reports a delay without setting it.
-		if (body.applied === false) return
+		// findDelay with apply:false reports a delay without setting it; with Live TF it only starts searching.
+		if (body.applied === false || body.status === 'searching') return
 
 		let match: RegExpMatchArray | null
 		if (target === 'generator') {

@@ -5,6 +5,7 @@ export interface GeneratorState {
 	duration?: string
 	output1?: string
 	output2?: string
+	pinkNoise?: boolean
 }
 
 export interface DspChannelState {

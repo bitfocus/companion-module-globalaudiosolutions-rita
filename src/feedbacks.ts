@@ -22,6 +22,13 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			options: [],
 			callback: () => self.state.generator.running === true,
 		},
+		generator_pink_noise: {
+			type: 'boolean',
+			name: 'Generator pink noise is on (Live TF)',
+			defaultStyle: GREEN,
+			options: [],
+			callback: () => self.state.generator.pinkNoise === true,
+		},
 		generator_signal: {
 			type: 'boolean',
 			name: 'Generator signal is',

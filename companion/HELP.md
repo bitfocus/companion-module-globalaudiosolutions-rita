@@ -13,7 +13,7 @@ Requires a RiTA version whose API includes change events, the 20-filter EQ and L
 
 ### Actions
 
-- **Generator**: Spectrum / Live TF on/off, signal, gain, duration, outputs.
+- **Generator**: Spectrum / Live TF on/off, pink noise on/off (Live TF), signal, gain, duration, outputs.
 - **Settings**: FFT size, window, smoothing, spectrum averages, averaging, sum, plot style, coherence threshold.
 - **Measurement**: capture, activate engine, find delay, set delay, set inputs, rename.
 - **Memory**: store the trace of an engine, show/hide, rename, delete.
@@ -24,7 +24,11 @@ Requires a RiTA version whose API includes change events, the 20-filter EQ and L
 - With Sweep, Multi Sweep, Pink or External it measures once. RiTA does not answer anything while it measures; the module waits for the estimated duration and then writes the result (or the error RiTA reports) to the log.
 - With Spectrum or Live TF it starts measuring continuously on that engine (or adds the engine if it is already running) until the generator is stopped. RiTA keeps answering while it runs.
 
-**Spectrum / Live TF on/off** selects the chosen signal if needed and measures it on the chosen engine; off stops it on every engine. To remove a single engine, deactivate it with **Measurement: activate engine**.
+**Spectrum / Live TF on/off** selects the chosen signal if needed and measures it on the chosen engine; off stops it. Spectrum can run on several engines (deactivate one with **Measurement: activate engine**); Live TF measures one engine at a time, so turning an engine on turns the others off.
+
+**Pink noise on/off** plays pink noise through the generator outputs while Live TF runs. Live TF itself generates nothing.
+
+**Measurement: find delay** with Live TF running starts a search on the active engine; after a few seconds the module reads the delay found and writes it to the log. Another find delay while it searches answers busy.
 
 **Measurement: set inputs** sets the measurement input of that engine only. In 1 Ref. Channel mode the reference input goes to all eight engines.
 
@@ -34,11 +38,11 @@ Requires a RiTA version whose API includes change events, the 20-filter EQ and L
 
 ### Feedbacks
 
-Connected, generator running, generator signal, engine active, engine selected, DSP polarity inverted.
+Connected, generator running, generator pink noise, generator signal, engine active, engine selected, DSP polarity inverted.
 
 ### Variables
 
-- `$(rita:generator_running)`, `generator_signal`, `generator_gain`, `generator_duration`, `generator_output1`, `generator_output2`
+- `$(rita:generator_running)`, `generator_signal`, `generator_gain`, `generator_duration`, `generator_output1`, `generator_output2`, `generator_pink_noise`
 - `$(rita:dsp_N_name)`, `dsp_N_gain`, `dsp_N_delay`, `dsp_N_polarity` for N = 1..8
 - `$(rita:meas_N_name)`, `meas_N_active`, `meas_N_delay`, `meas_N_level` for N = 1..8
 

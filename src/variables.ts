@@ -13,6 +13,7 @@ export function UpdateVariableDefinitions(self: ModuleInstance): void {
 		generator_duration: { name: 'Generator duration (s)' },
 		generator_output1: { name: 'Generator output 1' },
 		generator_output2: { name: 'Generator output 2' },
+		generator_pink_noise: { name: 'Generator pink noise (Live TF)' },
 	}
 	for (let i = 1; i <= CHANNEL_COUNT; i++) {
 		defs[`dsp_${i}_name`] = { name: `DSP ${i} name` }
@@ -38,6 +39,7 @@ export function UpdateVariableValues(self: ModuleInstance): void {
 		generator_duration: generator.duration ?? '',
 		generator_output1: generator.output1 ?? '',
 		generator_output2: generator.output2 ?? '',
+		generator_pink_noise: onOff(generator.pinkNoise, 'ON', 'OFF'),
 	}
 	for (let i = 1; i <= CHANNEL_COUNT; i++) {
 		const ch = dsp[i] ?? {}

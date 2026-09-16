@@ -117,7 +117,7 @@ export function UpdateActions(self: ModuleInstance): void {
 		generator_spectrum: {
 			name: 'Generator: Spectrum / Live TF on / off',
 			description:
-				'On: selects the signal and measures it continuously on the chosen engine, adding the engine if it is already running. Off: stops it on every engine.',
+				'On: selects the signal and measures it continuously on the chosen engine. Spectrum adds the engine to the ones already running; Live TF measures one engine at a time. Off: stops it.',
 			options: [
 				modeOption,
 				{ type: 'dropdown', id: 'signal', label: 'Signal', default: 'Spectrum', choices: CONTINUOUS_SIGNAL_CHOICES },
@@ -136,6 +136,14 @@ export function UpdateActions(self: ModuleInstance): void {
 					if (!(await send('set', 'generator', { signal }))) return
 				}
 				await capture(Number(options.engine ?? 1))
+			},
+		},
+		generator_pink_noise: {
+			name: 'Generator: pink noise on / off (Live TF)',
+			description: 'With Live TF running, plays pink noise through the generator outputs at the generator gain.',
+			options: [modeOption],
+			callback: async ({ options }) => {
+				await send('set', 'generator', { pinkNoise: resolveBool(options.mode, self.state.generator.pinkNoise) })
 			},
 		},
 		generator_signal: {
@@ -254,14 +262,20 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Measurement: find delay',
 			options: [engineOption, { type: 'checkbox', id: 'apply', label: 'Apply the delay found', default: true }],
 			callback: async ({ options }) => {
-				const response = await send(
-					'findDelay',
-					`measurements/${options.engine}`,
-					options.apply ? undefined : { apply: false },
-				)
+				const engine = Number(options.engine)
+				const response = await send('findDelay', `measurements/${engine}`, options.apply ? undefined : { apply: false })
 				if (!response) return
-				self.log('info', `Engine ${options.engine} delay: ${response.delay} ms${response.applied ? ' (applied)' : ''}`)
-				if (response.warning) self.log('warn', `Engine ${options.engine} find delay: ${response.warning}`)
+				if (response.status === 'searching') {
+					// With Live TF running RiTA searches in the background and writes the result to delay.
+					const seconds = Number(response.estimatedSeconds)
+					self.log('info', `Engine ${engine}: searching delay with Live TF`)
+					await new Promise((resolve) => setTimeout(resolve, (seconds > 0 ? seconds : 3) * 1000 + 1000))
+					await self.refresh(`measurements/${engine}`, ['delay'])
+					self.log('info', `Engine ${engine} delay: ${self.state.measurements[engine]?.delay} ms`)
+					return
+				}
+				self.log('info', `Engine ${engine} delay: ${response.delay} ms${response.applied ? ' (applied)' : ''}`)
+				if (response.warning) self.log('warn', `Engine ${engine} find delay: ${response.warning}`)
 			},
 		},
 		measurement_delay: {
