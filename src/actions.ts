@@ -90,7 +90,7 @@ export function UpdateActions(self: ModuleInstance): void {
 		if (response.continuous) {
 			self.log('info', `${response.signal ?? 'Continuous measurement'} running on engine ${engine}`)
 			await self.refresh('generator')
-			await self.refresh(`measurements/${engine}`, ENGINE_PROPS)
+			await self.refreshEngines()
 		} else {
 			self.afterCapture(engine, response.estimatedSeconds)
 		}
@@ -253,9 +253,10 @@ export function UpdateActions(self: ModuleInstance): void {
 			options: [engineOption, modeOption],
 			callback: async ({ options }) => {
 				const engine = Number(options.engine)
-				await send('set', `measurements/${engine}`, {
+				const response = await send('set', `measurements/${engine}`, {
 					active: resolveBool(options.mode, self.state.measurements[engine]?.active),
 				})
+				if (response) await self.refreshEngines()
 			},
 		},
 		measurement_find_delay: {

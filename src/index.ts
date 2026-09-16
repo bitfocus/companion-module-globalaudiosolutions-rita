@@ -118,6 +118,11 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		this.checkAllFeedbacks()
 	}
 
+	/** Switching one engine can switch the others (Live TF runs on one engine only), so read them all. */
+	async refreshEngines(): Promise<void> {
+		for (let i = 1; i <= ENGINE_COUNT; i++) await this.refresh(`measurements/${i}`, ENGINE_EVENT_PROPS)
+	}
+
 	async refresh(target: string, properties?: string[]): Promise<void> {
 		try {
 			this.applyResponse(target, await this.rita.send('get', target, properties))
