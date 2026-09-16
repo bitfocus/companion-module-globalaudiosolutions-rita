@@ -2,6 +2,8 @@
 
 Controls RiTA through its WebSocket API (`ws://<ip>:26101/api/v1/`).
 
+Requires a RiTA version whose API includes change events, the 20-filter EQ and Live TF. With an older RiTA the module still connects, but some actions are rejected.
+
 ### Configuration
 
 - **RiTA IP address**: the machine running RiTA with the API enabled.

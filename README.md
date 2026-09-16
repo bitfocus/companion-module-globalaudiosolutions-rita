@@ -18,14 +18,14 @@ Hecho con `@companion-module/base` 2.x: necesita Companion 4.3 o posterior.
 
 ## Generar el paquete
 
-Requiere Node.js 22.
+Requiere Node.js 22 y yarn 4 (con `corepack enable`, o `corepack yarn ...` sin permisos de administrador).
 
 ```bash
-npm install
+yarn install
 ```
 
 ```bash
-npm run package
+yarn package
 ```
 
 Deja `globalaudiosolutions-rita-<versión>.tgz` en esta carpeta. La versión sale de `package.json`.
