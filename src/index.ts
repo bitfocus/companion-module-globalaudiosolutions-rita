@@ -118,7 +118,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		this.checkAllFeedbacks()
 	}
 
-	async refresh(target: string, properties: string[]): Promise<void> {
+	async refresh(target: string, properties?: string[]): Promise<void> {
 		try {
 			this.applyResponse(target, await this.rita.send('get', target, properties))
 		} catch (err) {

@@ -81,6 +81,20 @@ export function UpdateActions(self: ModuleInstance): void {
 		}
 	}
 
+	// Sweep, Multi Sweep, Pink and External measure once and block RiTA until done;
+	// Spectrum answers continuous:true and keeps running until the generator is stopped.
+	const capture = async (engine: number): Promise<void> => {
+		const response = await send('capture', `measurements/${engine}`)
+		if (!response) return
+		if (response.continuous) {
+			self.log('info', `Spectrum running on engine ${engine}`)
+			await self.refresh('generator')
+			await self.refresh(`measurements/${engine}`, ENGINE_PROPS)
+		} else {
+			self.afterCapture(engine, response.estimatedSeconds)
+		}
+	}
+
 	const crossoverOptions = (defaultFrequency: number) =>
 		[
 			channelOption,
@@ -102,14 +116,17 @@ export function UpdateActions(self: ModuleInstance): void {
 		generator_spectrum: {
 			name: 'Generator: Spectrum on / off',
 			description:
-				'Runs the Spectrum signal until it is stopped. The other signals measure once: use Measurement: capture.',
-			options: [modeOption],
+				'On: selects Spectrum and measures it on the chosen engine, adding the engine if Spectrum is already running. Off: stops Spectrum on every engine.',
+			options: [modeOption, engineOption],
 			callback: async ({ options }) => {
-				const on = resolveBool(options.mode, self.state.generator.running)
-				if (on && self.state.generator.signal !== 'Spectrum') {
+				if (!resolveBool(options.mode, self.state.generator.running)) {
+					await send('set', 'generator', { running: false })
+					return
+				}
+				if (self.state.generator.signal !== 'Spectrum') {
 					if (!(await send('set', 'generator', { signal: 'Spectrum' }))) return
 				}
-				await send('set', 'generator', { running: on })
+				await capture(Number(options.engine ?? 1))
 			},
 		},
 		generator_signal: {
@@ -207,13 +224,11 @@ export function UpdateActions(self: ModuleInstance): void {
 		measurement_capture: {
 			name: 'Measurement: capture',
 			description:
-				'Turns the engine on and measures once with the current signal (Sweep, Multi Sweep, Pink or External). ' +
-				'RiTA does not answer anything else until it finishes.',
+				'Turns the engine on and measures with the current signal. Sweep, Multi Sweep, Pink and External measure once ' +
+				'and RiTA does not answer anything else until they finish. Spectrum keeps measuring until the generator is stopped.',
 			options: [engineOption],
 			callback: async ({ options }) => {
-				const engine = Number(options.engine)
-				const response = await send('capture', `measurements/${engine}`)
-				if (response) self.afterCapture(engine, response.estimatedSeconds)
+				await capture(Number(options.engine))
 			},
 		},
 		measurement_active: {

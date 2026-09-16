@@ -18,9 +18,11 @@ Controls RiTA through its WebSocket API (`ws://<ip>:26101/api/v1/`).
 - **DSP**: channel gain (absolute or step), delay, polarity, name, clear, EQ filter (1-20) and its on/off, high-pass and low-pass.
 - **Advanced: send API command**: any request with a JSON properties field, for objects not covered above.
 
-**Capture** is how a measurement is started with Sweep, Multi Sweep, Pink or External: it turns the engine on, runs the signal once and stores the result. RiTA does not answer anything while it measures; the module waits for the estimated duration and then writes the result (or the error RiTA reports) to the log.
+**Capture** measures on an engine with the current signal, and turns the engine on:
+- With Sweep, Multi Sweep, Pink or External it measures once. RiTA does not answer anything while it measures; the module waits for the estimated duration and then writes the result (or the error RiTA reports) to the log.
+- With Spectrum it starts measuring continuously on that engine (or adds the engine if Spectrum is already running) until the generator is stopped. RiTA keeps answering while it runs.
 
-**Spectrum on/off** selects the Spectrum signal if needed and runs it until it is stopped. RiTA keeps answering while it runs.
+**Spectrum on/off** selects Spectrum if needed and measures it on the chosen engine; off stops Spectrum on every engine. To remove a single engine, deactivate it with **Measurement: activate engine**.
 
 **EQ filters** start disabled in RiTA: a filter that is not enabled is stored but does not sound. Gain applies to Parametric and the shelving types, order to APF and FIR RevPhase.
 
