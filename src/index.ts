@@ -132,6 +132,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		if (this.resumeTimer) clearTimeout(this.resumeTimer)
 		const seconds = Number(estimatedSeconds)
 		const waitMs = (Number.isFinite(seconds) && seconds > 0 ? seconds : 10) * 1000 + 1500
+		this.rita.holdUntil(Date.now() + waitMs)
 		this.resumeTimer = setTimeout(() => {
 			this.resumeTimer = undefined
 			if (!this.rita.connected) return

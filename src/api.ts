@@ -42,11 +42,17 @@ export class RitaClient {
 	private destroyed = false
 	private login: Promise<void> | null = null
 	private loginRejected: string | null = null
+	private busyUntil = 0
 
 	constructor(private readonly module: ModuleInstanceLike) {}
 
 	get connected(): boolean {
 		return this.ws?.readyState === WebSocket.OPEN
+	}
+
+	/** RiTA will not answer until this time (a measurement is running): wait that much longer for replies. */
+	holdUntil(time: number): void {
+		this.busyUntil = Math.max(this.busyUntil, time)
 	}
 
 	connect(): void {
@@ -125,7 +131,7 @@ export class RitaClient {
 			const timer = setTimeout(() => {
 				this.pending.delete(sequenceNumber)
 				reject(new Error(`no reply to ${action} ${target ?? ''}`.trim()))
-			}, REQUEST_TIMEOUT_MS)
+			}, REQUEST_TIMEOUT_MS + Math.max(0, this.busyUntil - Date.now()))
 			this.pending.set(sequenceNumber, { resolve, reject, timer })
 
 			if (this.module.config.verbose) this.module.log('debug', `> ${text.replace(/("password"\s*:\s*)"[^"]*"/g, '$1"***"')}`)

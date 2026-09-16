@@ -504,5 +504,17 @@ export function UpdateActions(self: ModuleInstance): void {
 		},
 	}
 
+	// Companion gives up on an action after a few seconds, but RiTA answers nothing while a
+	// one-pass measurement runs: actions return at once and finish in the background.
+	for (const definition of Object.values(actions)) {
+		if (!definition) continue
+		const run = definition.callback
+		definition.callback = (event, context) => {
+			void Promise.resolve(run(event, context)).catch((err: Error) => {
+				self.log('warn', `Action ${event.actionId} failed: ${err.message}`)
+			})
+		}
+	}
+
 	self.setActionDefinitions(actions)
 }
