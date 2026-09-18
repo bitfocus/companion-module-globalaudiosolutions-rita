@@ -1,7 +1,7 @@
 import { combineRgb, type CompanionFeedbackDefinitions } from '@companion-module/base'
 import type ModuleInstance from './index.js'
 import type { FeedbacksSchema } from './index.js'
-import { CHANNEL_CHOICES, ENGINE_CHOICES, SIGNAL_CHOICES } from './choices.js'
+import { ALIGN_APF_CHOICES, CHANNEL_CHOICES, ENGINE_CHOICES, SIGNAL_CHOICES } from './choices.js'
 
 const GREEN = { bgcolor: combineRgb(0, 153, 51), color: combineRgb(255, 255, 255) }
 const RED = { bgcolor: combineRgb(204, 0, 0), color: combineRgb(255, 255, 255) }
@@ -56,6 +56,17 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			defaultStyle: RED,
 			options: [{ type: 'dropdown', id: 'channel', label: 'Channel', default: '1', choices: CHANNEL_CHOICES }],
 			callback: ({ options }) => self.state.dsp[Number(options.channel)]?.polarity === true,
+		},
+		dsp_align_apf_enabled: {
+			type: 'boolean',
+			name: 'DSP alignment APF is enabled',
+			defaultStyle: GREEN,
+			options: [
+				{ type: 'dropdown', id: 'channel', label: 'Channel', default: '1', choices: CHANNEL_CHOICES },
+				{ type: 'dropdown', id: 'slot', label: 'Alignment APF', default: '1', choices: ALIGN_APF_CHOICES },
+			],
+			callback: ({ options }) =>
+				self.state.alignApf[Number(options.channel)]?.[Number(options.slot)]?.enabled === true,
 		},
 	}
 

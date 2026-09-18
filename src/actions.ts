@@ -4,6 +4,7 @@ import type { ActionsSchema } from './index.js'
 import type { RitaAction } from './api.js'
 import { DSP_PROPS, ENGINE_PROPS } from './state.js'
 import {
+	ALIGN_APF_CHOICES,
 	CHANNEL_CHOICES,
 	CONTINUOUS_SIGNAL_CHOICES,
 	DURATION_CHOICES,
@@ -57,6 +58,14 @@ const memoryOption = {
 	label: 'Memory number or name',
 	default: '1',
 	useVariables: true,
+} as const
+
+const apfSlotOption = {
+	type: 'dropdown',
+	id: 'slot',
+	label: 'Alignment APF',
+	default: '1',
+	choices: ALIGN_APF_CHOICES,
 } as const
 
 const slotOption = {
@@ -469,6 +478,38 @@ export function UpdateActions(self: ModuleInstance): void {
 					enabled = !current.enabled
 				}
 				await send('set', target, { enabled })
+			},
+		},
+		dsp_align_apf: {
+			name: 'DSP: set alignment APF',
+			description:
+				'One of the 2 alignment all-pass filters of the channel, separate from the 20 EQ filters. Auto Align replaces both on every run.',
+			options: [
+				channelOption,
+				apfSlotOption,
+				{ type: 'checkbox', id: 'enabled', label: 'Enabled', default: true },
+				{ type: 'number', id: 'frequency', label: 'Frequency (Hz)', default: 1000, min: 20, max: 20000 },
+				{ type: 'number', id: 'order', label: 'Order', default: 2, min: 1, max: 2, asInteger: true },
+				{ type: 'number', id: 'q', label: 'Q', default: 0.7, min: 0.1, max: 10, step: 0.01 },
+			],
+			callback: async ({ options }) => {
+				await send('set', `dsp/out/${options.channel}/alignapf/${options.slot}`, {
+					enabled: options.enabled !== false,
+					frequency: Number(options.frequency),
+					order: Number(options.order),
+					q: Number(options.q),
+				})
+			},
+		},
+		dsp_align_apf_enabled: {
+			name: 'DSP: alignment APF on / off',
+			options: [channelOption, apfSlotOption, modeOption],
+			callback: async ({ options }) => {
+				const channel = Number(options.channel)
+				const slot = Number(options.slot)
+				await send('set', `dsp/out/${channel}/alignapf/${slot}`, {
+					enabled: resolveBool(options.mode, self.state.alignApf[channel]?.[slot]?.enabled),
+				})
 			},
 		},
 		dsp_highpass: {

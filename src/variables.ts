@@ -1,6 +1,6 @@
 import type { CompanionVariableDefinitions, CompanionVariableValues } from '@companion-module/base'
 import type ModuleInstance from './index.js'
-import { CHANNEL_COUNT, ENGINE_COUNT } from './state.js'
+import { ALIGN_APF_COUNT, CHANNEL_COUNT, ENGINE_COUNT } from './state.js'
 
 const onOff = (value: boolean | undefined, on: string, off: string): string =>
 	value === undefined ? '' : value ? on : off
@@ -20,6 +20,12 @@ export function UpdateVariableDefinitions(self: ModuleInstance): void {
 		defs[`dsp_${i}_gain`] = { name: `DSP ${i} gain (dB)` }
 		defs[`dsp_${i}_delay`] = { name: `DSP ${i} delay (ms)` }
 		defs[`dsp_${i}_polarity`] = { name: `DSP ${i} polarity` }
+		for (let k = 1; k <= ALIGN_APF_COUNT; k++) {
+			defs[`dsp_${i}_apf${k}_enabled`] = { name: `DSP ${i} alignment APF ${k} enabled` }
+			defs[`dsp_${i}_apf${k}_frequency`] = { name: `DSP ${i} alignment APF ${k} frequency (Hz)` }
+			defs[`dsp_${i}_apf${k}_order`] = { name: `DSP ${i} alignment APF ${k} order` }
+			defs[`dsp_${i}_apf${k}_q`] = { name: `DSP ${i} alignment APF ${k} Q` }
+		}
 	}
 	for (let i = 1; i <= ENGINE_COUNT; i++) {
 		defs[`meas_${i}_name`] = { name: `Engine ${i} name` }
@@ -47,6 +53,13 @@ export function UpdateVariableValues(self: ModuleInstance): void {
 		values[`dsp_${i}_gain`] = ch.gain ?? ''
 		values[`dsp_${i}_delay`] = ch.delay ?? ''
 		values[`dsp_${i}_polarity`] = onOff(ch.polarity, 'INV', 'NORM')
+		for (let k = 1; k <= ALIGN_APF_COUNT; k++) {
+			const apf = self.state.alignApf[i]?.[k] ?? {}
+			values[`dsp_${i}_apf${k}_enabled`] = onOff(apf.enabled, 'ON', 'OFF')
+			values[`dsp_${i}_apf${k}_frequency`] = apf.frequency ?? ''
+			values[`dsp_${i}_apf${k}_order`] = apf.order ?? ''
+			values[`dsp_${i}_apf${k}_q`] = apf.q ?? ''
+		}
 	}
 	for (let i = 1; i <= ENGINE_COUNT; i++) {
 		const m = measurements[i] ?? {}

@@ -9,6 +9,8 @@ import {
 import { GetConfigFields, type ModuleConfig, type ModuleSecrets } from './config.js'
 import { RitaClient, RitaError, type ModuleInstanceLike } from './api.js'
 import {
+	ALIGN_APF_COUNT,
+	ALIGN_APF_PROPS,
 	CHANNEL_COUNT,
 	DSP_PROPS,
 	ENGINE_COUNT,
@@ -52,6 +54,8 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 	private polling = false
 	private levelPolling = false
 	private eventsSupported = false
+	// Older RiTA versions have no alignapf object: stop asking once it answers unknown target.
+	private alignApfSupported = true
 
 	constructor(internal: unknown) {
 		super(internal)
@@ -111,6 +115,9 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 			Object.assign((this.state.dsp[Number(match[1])] ??= {}), body)
 		} else if ((match = target.match(/^measurements\/(\d+)$/))) {
 			Object.assign((this.state.measurements[Number(match[1])] ??= {}), body)
+		} else if ((match = target.match(/^dsp\/out\/(\d+)\/alignapf\/(\d+)$/))) {
+			const channel = (this.state.alignApf[Number(match[1])] ??= {})
+			Object.assign((channel[Number(match[2])] ??= {}), body)
 		} else {
 			return
 		}
@@ -180,11 +187,17 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 
 	private async subscribeAll(): Promise<void> {
 		this.eventsSupported = true
+		this.alignApfSupported = true
 		const targets: [string, string[] | undefined][] = [['generator', undefined]]
 		for (let i = 1; i <= CHANNEL_COUNT; i++) targets.push([`dsp/out/${i}`, DSP_PROPS])
 		for (let i = 1; i <= ENGINE_COUNT; i++) targets.push([`measurements/${i}`, ENGINE_EVENT_PROPS])
+		for (let i = 1; i <= CHANNEL_COUNT; i++) {
+			for (let k = 1; k <= ALIGN_APF_COUNT; k++) targets.push([`dsp/out/${i}/alignapf/${k}`, ALIGN_APF_PROPS])
+		}
 
 		for (const [target, properties] of targets) {
+			const isAlignApf = target.includes('/alignapf/')
+			if (isAlignApf && !this.alignApfSupported) continue
 			try {
 				const response = await this.rita.send('subscribe', target, properties)
 				this.applyResponse(target, response?.state)
@@ -193,6 +206,11 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 					this.eventsSupported = false
 					this.log('info', 'This RiTA does not send change events: polling instead')
 					return
+				}
+				if (isAlignApf && err instanceof RitaError && err.code === 'unknown target') {
+					this.alignApfSupported = false
+					this.log('info', 'This RiTA has no alignment APFs')
+					continue
 				}
 				this.log('warn', `Subscribe ${target}: ${(err as Error).message}`)
 			}
@@ -252,11 +270,27 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 				const engine = await read(`measurements/${i}`, ENGINE_PROPS)
 				if (engine) this.state.measurements[i] = engine
 			}
+			await this.pollAlignApf()
 
 			UpdateVariableValues(this)
 			this.checkAllFeedbacks()
 		} finally {
 			this.polling = false
+		}
+	}
+
+	private async pollAlignApf(): Promise<void> {
+		for (let i = 1; i <= CHANNEL_COUNT; i++) {
+			for (let k = 1; k <= ALIGN_APF_COUNT; k++) {
+				if (!this.alignApfSupported) return
+				try {
+					const response = await this.rita.send('get', `dsp/out/${i}/alignapf/${k}`, ALIGN_APF_PROPS)
+					Object.assign(((this.state.alignApf[i] ??= {})[k] ??= {}), response)
+				} catch (err) {
+					if (err instanceof RitaError && err.code === 'unknown target') this.alignApfSupported = false
+					else this.log('debug', `Poll dsp/out/${i}/alignapf/${k}: ${(err as Error).message}`)
+				}
+			}
 		}
 	}
 

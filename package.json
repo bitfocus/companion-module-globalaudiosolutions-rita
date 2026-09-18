@@ -1,6 +1,6 @@
 {
 	"name": "companion-module-globalaudiosolutions-rita",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "Bitfocus Companion module for RiTA (Global Audio Solutions)",
 	"main": "dist/index.js",
 	"type": "module",
