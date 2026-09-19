@@ -31,6 +31,8 @@ const CONTROL_PORT_SPAN = 5
 // A capture blocks the API until the measurement finishes, so be generous.
 const REQUEST_TIMEOUT_MS = 15000
 const RECONNECT_DELAY_MS = 3000
+// RiTA can leave a control port half-open (TCP accepts, no WebSocket handshake) after a client left it.
+const HANDSHAKE_TIMEOUT_MS = 3000
 const API_PATH = '/api/v1/'
 
 export class RitaClient {
@@ -39,6 +41,8 @@ export class RitaClient {
 	private pending = new Map<number, PendingRequest>()
 	private reconnectTimer: NodeJS.Timeout | undefined
 	private portOffset = 0
+	private portsTried = 0
+	private lastGoodOffset = -1
 	private destroyed = false
 	private login: Promise<void> | null = null
 	private loginRejected: string | null = null
@@ -62,6 +66,7 @@ export class RitaClient {
 		}
 		this.destroyed = false
 		this.portOffset = 0
+		this.portsTried = 0
 		this.open()
 	}
 
@@ -146,16 +151,18 @@ export class RitaClient {
 
 	private open(): void {
 		if (this.destroyed) return
-		const port = (this.module.config.port || 26101) + this.portOffset
+		const offset = this.portOffset
+		const port = (this.module.config.port || 26101) + offset
 		const url = `ws://${this.module.config.host}:${port}${API_PATH}`
 		this.module.updateStatus(InstanceStatus.Connecting)
 
-		const ws = new WebSocket(url, { handshakeTimeout: 5000 })
+		const ws = new WebSocket(url, { handshakeTimeout: HANDSHAKE_TIMEOUT_MS })
 		this.ws = ws
 		let opened = false
 
 		ws.on('open', () => {
 			opened = true
+			this.lastGoodOffset = offset
 			this.module.log('info', `Connected to ${url}`)
 			this.module.updateStatus(InstanceStatus.Ok)
 			this.module.onConnected()
@@ -173,8 +180,8 @@ export class RitaClient {
 			this.rejectAll(new Error('connection closed'))
 			if (this.destroyed) return
 
-			if (!opened && this.portOffset < CONTROL_PORT_SPAN - 1) {
-				this.portOffset++
+			if (!opened && ++this.portsTried < CONTROL_PORT_SPAN) {
+				this.portOffset = (this.portOffset + 1) % CONTROL_PORT_SPAN
 				this.open()
 				return
 			}
@@ -198,7 +205,9 @@ export class RitaClient {
 		if (this.destroyed || this.reconnectTimer) return
 		this.reconnectTimer = setTimeout(() => {
 			this.reconnectTimer = undefined
-			this.portOffset = 0
+			// The port just left is the one RiTA may not accept again: start after it and go round.
+			this.portOffset = this.lastGoodOffset >= 0 ? (this.lastGoodOffset + 1) % CONTROL_PORT_SPAN : 0
+			this.portsTried = 0
 			this.open()
 		}, RECONNECT_DELAY_MS)
 	}
