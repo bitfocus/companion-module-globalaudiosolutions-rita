@@ -2,7 +2,7 @@ import type { CompanionActionDefinitions } from '@companion-module/base'
 import type ModuleInstance from './index.js'
 import type { ActionsSchema } from './index.js'
 import type { RitaAction } from './api.js'
-import { DSP_PROPS, ENGINE_PROPS } from './state.js'
+import { AVERAGE_PROPS, DSP_PROPS, ENGINE_PROPS } from './state.js'
 import {
 	ALIGN_APF_CHOICES,
 	CHANNEL_CHOICES,
@@ -341,7 +341,26 @@ export function UpdateActions(self: ModuleInstance): void {
 				const response = await send('export', 'average', { name: String(options.name ?? '') })
 				if (!response) return
 				self.log('info', `Exporting AVG as "${response.name}" (${response.format}) to ${response.folder}`)
-				await self.waitForExport(String(response.name))
+				const status = await self.waitForExport(`AVG export "${response.name}"`)
+				if (status) self.log('info', `AVG exported as "${status.name || response.name}"`)
+				await self.refresh('average', AVERAGE_PROPS)
+			},
+		},
+		measurement_export_all: {
+			name: 'Measurement: export all',
+			description:
+				'Export All of RiTA: exports the selected engines to the project folder, in the format chosen in RiTA. ' +
+				'With a Position set in RiTA, each file is named <engine>_<position>.',
+			options: [],
+			callback: async () => {
+				const response = await send('exportAll', 'measurements')
+				if (!response) return
+				const engines = Array.isArray(response.measurements)
+					? `engines ${response.measurements.join(', ')}`
+					: `${response.measurements} engines`
+				const position = response.position ? `, position "${response.position}"` : ''
+				self.log('info', `Exporting ${engines} (${response.format}${position}) to ${response.folder}`)
+				if (await self.waitForExport('Export all')) self.log('info', 'Export all finished')
 			},
 		},
 

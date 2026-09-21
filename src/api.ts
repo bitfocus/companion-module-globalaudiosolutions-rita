@@ -10,6 +10,7 @@ export type RitaAction =
 	| 'findDelay'
 	| 'clear'
 	| 'export'
+	| 'exportAll'
 	| 'refresh'
 	| 'subscribe'
 	| 'unsubscribe'

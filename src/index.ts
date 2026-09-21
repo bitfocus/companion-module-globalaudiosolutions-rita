@@ -295,8 +295,8 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 	}
 
 	/** Export is asynchronous: how it went shows up in exportStatus of the measurements object. */
-	async waitForExport(name: string): Promise<void> {
-		for (let i = 0; i < 60; i++) {
+	async waitForExport(label: string): Promise<Record<string, any> | undefined> {
+		for (let i = 0; i < 120; i++) {
 			await new Promise((resolve) => setTimeout(resolve, 1000))
 			let status: any
 			try {
@@ -305,12 +305,12 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 				continue
 			}
 			if (!status || status.running) continue
-			if (status.lastError) this.log('warn', `AVG export "${name}" failed: ${status.lastError}`)
-			else this.log('info', `AVG exported as "${status.name || name}"`)
-			await this.refresh('average', AVERAGE_PROPS)
-			return
+			if (!status.lastError) return status
+			this.log('warn', `${label} failed: ${status.lastError}`)
+			return undefined
 		}
-		this.log('warn', `AVG export "${name}": no result after 60 s`)
+		this.log('warn', `${label}: no result after 120 s`)
+		return undefined
 	}
 
 	private async pollAverage(): Promise<void> {
