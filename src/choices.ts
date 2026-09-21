@@ -51,4 +51,4 @@ export const XOVER_TYPE_CHOICES = same([
 	'Chebyshev II',
 ])
 
-export const RAW_ACTION_CHOICES = same(['get', 'set', 'capture', 'delete', 'findDelay', 'clear'])
+export const RAW_ACTION_CHOICES = same(['get', 'set', 'capture', 'delete', 'findDelay', 'clear', 'export', 'refresh'])

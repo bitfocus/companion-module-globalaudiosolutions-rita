@@ -14,6 +14,12 @@ export function UpdateVariableDefinitions(self: ModuleInstance): void {
 		generator_output1: { name: 'Generator output 1' },
 		generator_output2: { name: 'Generator output 2' },
 		generator_pink_noise: { name: 'Generator pink noise (Live TF)' },
+		average_active: { name: 'AVG on' },
+		average_has_data: { name: 'AVG has a curve' },
+		average_count: { name: 'AVG number of engines' },
+		average_engines: { name: 'AVG engines' },
+		average_mode: { name: 'AVG mode' },
+		average_name: { name: 'AVG last export name' },
 	}
 	for (let i = 1; i <= CHANNEL_COUNT; i++) {
 		defs[`dsp_${i}_name`] = { name: `DSP ${i} name` }
@@ -46,6 +52,12 @@ export function UpdateVariableValues(self: ModuleInstance): void {
 		generator_output1: generator.output1 ?? '',
 		generator_output2: generator.output2 ?? '',
 		generator_pink_noise: onOff(generator.pinkNoise, 'ON', 'OFF'),
+		average_active: onOff(self.state.average.active, 'ON', 'OFF'),
+		average_has_data: onOff(self.state.average.hasData, 'YES', 'NO'),
+		average_count: self.state.average.count ?? '',
+		average_engines: Array.isArray(self.state.average.engines) ? self.state.average.engines.join(', ') : '',
+		average_mode: self.state.average.mode ?? '',
+		average_name: self.state.average.name ?? '',
 	}
 	for (let i = 1; i <= CHANNEL_COUNT; i++) {
 		const ch = dsp[i] ?? {}

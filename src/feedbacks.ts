@@ -29,6 +29,21 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			options: [],
 			callback: () => self.state.generator.pinkNoise === true,
 		},
+		average_active: {
+			type: 'boolean',
+			name: 'AVG is on',
+			defaultStyle: GREEN,
+			options: [],
+			callback: () => self.state.average.active === true,
+		},
+		average_has_data: {
+			type: 'boolean',
+			name: 'AVG has a curve',
+			description: 'AVG is on and there is an average to show or export',
+			defaultStyle: GREEN,
+			options: [],
+			callback: () => self.state.average.hasData === true,
+		},
 		generator_signal: {
 			type: 'boolean',
 			name: 'Generator signal is',

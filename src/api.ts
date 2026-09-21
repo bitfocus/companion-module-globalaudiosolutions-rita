@@ -2,7 +2,17 @@ import WebSocket from 'ws'
 import { InstanceStatus, type LogLevel } from '@companion-module/base'
 import type { ModuleConfig, ModuleSecrets } from './config.js'
 
-export type RitaAction = 'get' | 'set' | 'capture' | 'delete' | 'findDelay' | 'clear' | 'subscribe' | 'unsubscribe'
+export type RitaAction =
+	| 'get'
+	| 'set'
+	| 'capture'
+	| 'delete'
+	| 'findDelay'
+	| 'clear'
+	| 'export'
+	| 'refresh'
+	| 'subscribe'
+	| 'unsubscribe'
 
 export interface ModuleInstanceLike {
 	config: ModuleConfig

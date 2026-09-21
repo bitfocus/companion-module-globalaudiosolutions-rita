@@ -323,6 +323,28 @@ export function UpdateActions(self: ModuleInstance): void {
 			},
 		},
 
+		average_active: {
+			name: 'AVG: on / off',
+			description: 'The AVG button: averages the selected engines. The same control as Settings: averaging on/off.',
+			options: [modeOption],
+			callback: async ({ options }) => {
+				await send('set', 'average', { active: resolveBool(options.mode, self.state.average.active) })
+			},
+		},
+		average_export: {
+			name: 'AVG: export impulse',
+			description:
+				'Exports the impulse response of the average to the Memory Bank folder, in the format chosen in RiTA. ' +
+				'Characters not allowed in file names become "-"; an empty name exports as AVG.',
+			options: [{ type: 'textinput', id: 'name', label: 'File name', default: 'AVG', useVariables: true }],
+			callback: async ({ options }) => {
+				const response = await send('export', 'average', { name: String(options.name ?? '') })
+				if (!response) return
+				self.log('info', `Exporting AVG as "${response.name}" (${response.format}) to ${response.folder}`)
+				await self.waitForExport(String(response.name))
+			},
+		},
+
 		memory_capture: {
 			name: 'Memory: store trace from engine',
 			options: [engineOption],

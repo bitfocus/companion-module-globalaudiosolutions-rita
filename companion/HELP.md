@@ -17,6 +17,7 @@ Requires a RiTA version whose API includes change events, the 20-filter EQ and L
 - **Settings**: FFT size, window, smoothing, spectrum averages, averaging, sum, plot style, coherence threshold.
 - **Measurement**: capture, activate engine, find delay, set delay, set inputs, rename.
 - **Memory**: store the trace of an engine, show/hide, rename, delete.
+- **AVG**: on/off, export impulse.
 - **DSP**: channel gain (absolute or step), delay, polarity, name, clear, EQ filter (1-20) and its on/off, alignment APF (1-2) and its on/off, high-pass and low-pass.
 - **Advanced: send API command**: any request with a JSON properties field, for objects not covered above.
 
@@ -36,15 +37,18 @@ Requires a RiTA version whose API includes change events, the 20-filter EQ and L
 
 **Alignment APFs** are the 2 all-pass filters per channel that RiTA's Auto Align writes (it replaces both on every run), separate from the 20 EQ filters. They can also be set by hand: frequency, order (1 or 2) and Q. The module follows them, so buttons update after an Auto Align. Older RiTA versions do not have them.
 
+**AVG** is RiTA's average of the **selected** engines (not the active ones). **AVG: on / off** is the same control as *Settings: averaging on/off*. **AVG: export impulse** writes the impulse response of the average to the Memory Bank folder, in the format chosen in RiTA; the export runs in the background and its result (or error, such as no export folder or AVG off) is written to the log.
+
 **DSP: clear channel** is the Clear button of the row, and also clears that engine measurement.
 
 ### Feedbacks
 
-Connected, generator running, generator pink noise, generator signal, engine active, engine selected, DSP polarity inverted, DSP alignment APF enabled.
+Connected, AVG on, AVG has a curve, generator running, generator pink noise, generator signal, engine active, engine selected, DSP polarity inverted, DSP alignment APF enabled.
 
 ### Variables
 
 - `$(rita:generator_running)`, `generator_signal`, `generator_gain`, `generator_duration`, `generator_output1`, `generator_output2`, `generator_pink_noise`
+- `$(rita:average_active)`, `average_has_data`, `average_count`, `average_engines`, `average_mode`, `average_name`
 - `$(rita:dsp_N_name)`, `dsp_N_gain`, `dsp_N_delay`, `dsp_N_polarity` for N = 1..8
 - `$(rita:dsp_N_apfK_enabled)`, `dsp_N_apfK_frequency`, `dsp_N_apfK_order`, `dsp_N_apfK_q` for N = 1..8 and K = 1..2
 - `$(rita:meas_N_name)`, `meas_N_active`, `meas_N_delay`, `meas_N_level` for N = 1..8

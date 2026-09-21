@@ -11,6 +11,7 @@ import { RitaClient, RitaError, type ModuleInstanceLike } from './api.js'
 import {
 	ALIGN_APF_COUNT,
 	ALIGN_APF_PROPS,
+	AVERAGE_PROPS,
 	CHANNEL_COUNT,
 	DSP_PROPS,
 	ENGINE_COUNT,
@@ -54,8 +55,9 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 	private polling = false
 	private levelPolling = false
 	private eventsSupported = false
-	// Older RiTA versions have no alignapf object: stop asking once it answers unknown target.
+	// Older RiTA versions have no alignapf or average object: stop asking once they answer unknown target.
 	private alignApfSupported = true
+	private averageSupported = true
 
 	constructor(internal: unknown) {
 		super(internal)
@@ -111,6 +113,8 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		let match: RegExpMatchArray | null
 		if (target === 'generator') {
 			Object.assign(this.state.generator, body)
+		} else if (target === 'average') {
+			Object.assign(this.state.average, body)
 		} else if ((match = target.match(/^dsp\/out\/(\d+)$/))) {
 			Object.assign((this.state.dsp[Number(match[1])] ??= {}), body)
 		} else if ((match = target.match(/^measurements\/(\d+)$/))) {
@@ -188,7 +192,11 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 	private async subscribeAll(): Promise<void> {
 		this.eventsSupported = true
 		this.alignApfSupported = true
-		const targets: [string, string[] | undefined][] = [['generator', undefined]]
+		this.averageSupported = true
+		const targets: [string, string[] | undefined][] = [
+			['generator', undefined],
+			['average', AVERAGE_PROPS],
+		]
 		for (let i = 1; i <= CHANNEL_COUNT; i++) targets.push([`dsp/out/${i}`, DSP_PROPS])
 		for (let i = 1; i <= ENGINE_COUNT; i++) targets.push([`measurements/${i}`, ENGINE_EVENT_PROPS])
 		for (let i = 1; i <= CHANNEL_COUNT; i++) {
@@ -197,7 +205,8 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 
 		for (const [target, properties] of targets) {
 			const isAlignApf = target.includes('/alignapf/')
-			if (isAlignApf && !this.alignApfSupported) continue
+			const isAverage = target === 'average'
+			if ((isAlignApf && !this.alignApfSupported) || (isAverage && !this.averageSupported)) continue
 			try {
 				const response = await this.rita.send('subscribe', target, properties)
 				this.applyResponse(target, response?.state)
@@ -210,6 +219,11 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 				if (isAlignApf && err instanceof RitaError && err.code === 'unknown target') {
 					this.alignApfSupported = false
 					this.log('info', 'This RiTA has no alignment APFs')
+					continue
+				}
+				if (isAverage && err instanceof RitaError && err.code === 'unknown target') {
+					this.averageSupported = false
+					this.log('info', 'This RiTA has no average object')
 					continue
 				}
 				this.log('warn', `Subscribe ${target}: ${(err as Error).message}`)
@@ -271,11 +285,41 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 				if (engine) this.state.measurements[i] = engine
 			}
 			await this.pollAlignApf()
+			await this.pollAverage()
 
 			UpdateVariableValues(this)
 			this.checkAllFeedbacks()
 		} finally {
 			this.polling = false
+		}
+	}
+
+	/** Export is asynchronous: how it went shows up in exportStatus of the measurements object. */
+	async waitForExport(name: string): Promise<void> {
+		for (let i = 0; i < 60; i++) {
+			await new Promise((resolve) => setTimeout(resolve, 1000))
+			let status: any
+			try {
+				status = (await this.rita.send('get', 'measurements'))?.exportStatus
+			} catch {
+				continue
+			}
+			if (!status || status.running) continue
+			if (status.lastError) this.log('warn', `AVG export "${name}" failed: ${status.lastError}`)
+			else this.log('info', `AVG exported as "${status.name || name}"`)
+			await this.refresh('average', AVERAGE_PROPS)
+			return
+		}
+		this.log('warn', `AVG export "${name}": no result after 60 s`)
+	}
+
+	private async pollAverage(): Promise<void> {
+		if (!this.averageSupported) return
+		try {
+			Object.assign(this.state.average, await this.rita.send('get', 'average', AVERAGE_PROPS))
+		} catch (err) {
+			if (err instanceof RitaError && err.code === 'unknown target') this.averageSupported = false
+			else this.log('debug', `Poll average: ${(err as Error).message}`)
 		}
 	}
 
