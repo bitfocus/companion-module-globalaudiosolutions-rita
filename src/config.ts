@@ -48,9 +48,9 @@ export function GetConfigFields(): SomeCompanionConfigField[] {
 		{
 			type: 'number',
 			id: 'pollInterval',
-			label: 'Level meter poll interval in ms (0 = off)',
+			label: 'Level meter and sync poll interval in ms (0 = off)',
 			description:
-				'RiTA sends change events for everything else. On a RiTA without events, all the state is polled at this interval.',
+				'RiTA sends change events for everything except the level meters and the sync state, which are read at this interval. On a RiTA without events, all the state is polled at this interval.',
 			width: 6,
 			default: 2000,
 			min: 0,

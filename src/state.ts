@@ -39,8 +39,14 @@ export interface AverageState {
 	name?: string
 }
 
+export interface SyncState {
+	synced?: boolean
+	syncCount?: number
+}
+
 export interface RitaState {
 	generator: GeneratorState
+	sync: SyncState
 	dsp: Record<number, DspChannelState>
 	measurements: Record<number, MeasurementState>
 	alignApf: Record<number, Record<number, AlignApfState>>
@@ -57,7 +63,7 @@ export const ALIGN_APF_PROPS = ['enabled', 'frequency', 'order', 'q']
 export const AVERAGE_PROPS = ['active', 'count', 'hasData', 'engines', 'mode', 'name']
 
 export function createEmptyState(): RitaState {
-	const state: RitaState = { generator: {}, dsp: {}, measurements: {}, alignApf: {}, average: {} }
+	const state: RitaState = { generator: {}, sync: {}, dsp: {}, measurements: {}, alignApf: {}, average: {} }
 	for (let i = 1; i <= CHANNEL_COUNT; i++) {
 		state.dsp[i] = {}
 		state.alignApf[i] = {}

@@ -41,17 +41,20 @@ Requires a RiTA version whose API includes change events, the 20-filter EQ and L
 
 **Measurement: sync all** is RiTA's Sync All (button and Y shortcut): it aligns with each other the engines that already have a measurement, without touching AVG. The new delays show up on the buttons at once and are written to the log. With no measured engine it answers "no active measurements".
 
+RiTA does not send events for the sync, so the module reads it with the level meters, at the poll interval: the feedback **Sync All is set** stays on while a sync is in place, and a Sync All done from RiTA writes "Sync All done in RiTA" to the log.
+
 **Measurement: export all** is RiTA's Export All: it exports the **selected** engines (the engine buttons, `selected` in the API) to the project folder, in the format chosen in RiTA. If a Position is written in RiTA, each file is named `<engine>_<position>` (and the AVG export gets `_<position>` too). The export runs in the background; its result (or error, such as no engine selected or no export folder) is written to the log.
 
 **DSP: clear channel** is the Clear button of the row, and also clears that engine measurement.
 
 ### Feedbacks
 
-Connected, AVG on, AVG has a curve, generator running, generator pink noise, generator signal, engine active, engine selected, DSP polarity inverted, DSP alignment APF enabled.
+Connected, Sync All is set, AVG on, AVG has a curve, generator running, generator pink noise, generator signal, engine active, engine selected, DSP polarity inverted, DSP alignment APF enabled.
 
 ### Variables
 
 - `$(rita:generator_running)`, `generator_signal`, `generator_gain`, `generator_duration`, `generator_output1`, `generator_output2`, `generator_pink_noise`
+- `$(rita:sync_active)`, `sync_count`
 - `$(rita:average_active)`, `average_has_data`, `average_count`, `average_engines`, `average_mode`, `average_name`
 - `$(rita:dsp_N_name)`, `dsp_N_gain`, `dsp_N_delay`, `dsp_N_polarity` for N = 1..8
 - `$(rita:dsp_N_apfK_enabled)`, `dsp_N_apfK_frequency`, `dsp_N_apfK_order`, `dsp_N_apfK_q` for N = 1..8 and K = 1..2

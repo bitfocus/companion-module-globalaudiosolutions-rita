@@ -53,7 +53,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 	private levelTimer: NodeJS.Timeout | undefined
 	private resumeTimer: NodeJS.Timeout | undefined
 	private polling = false
-	private levelPolling = false
+	private overviewPolling = false
 	private eventsSupported = false
 	// Older RiTA versions have no alignapf or average object: stop asking once they answer unknown target.
 	private alignApfSupported = true
@@ -237,7 +237,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		const interval = configured > 0 ? Math.max(configured, 250) : 0
 		if (this.eventsSupported) {
 			this.pollTimer = setInterval(() => void this.poll(), RESYNC_MS)
-			if (interval) this.levelTimer = setInterval(() => void this.pollLevels(), interval)
+			if (interval) this.levelTimer = setInterval(() => void this.pollOverview(), interval)
 		} else if (interval) {
 			this.pollTimer = setInterval(() => void this.poll(), interval)
 		}
@@ -284,6 +284,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 				const engine = await read(`measurements/${i}`, ENGINE_PROPS)
 				if (engine) this.state.measurements[i] = engine
 			}
+			this.applyOverview(await read('measurements'))
 			await this.pollAlignApf()
 			await this.pollAverage()
 
@@ -338,19 +339,42 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		}
 	}
 
-	private async pollLevels(): Promise<void> {
-		if (this.levelPolling || this.polling || !this.rita.connected) return
-		this.levelPolling = true
+	// One request brings the 8 engines (level meters included) plus synced and syncCount,
+	// which RiTA does not send as events.
+	private async pollOverview(): Promise<void> {
+		if (this.overviewPolling || this.polling || !this.rita.connected) return
+		this.overviewPolling = true
 		try {
-			for (let i = 1; i <= ENGINE_COUNT; i++) {
-				const response = await this.rita.send('get', `measurements/${i}`, ['level'])
-				Object.assign((this.state.measurements[i] ??= {}), response)
-			}
+			this.applyOverview(await this.rita.send('get', 'measurements'))
 			UpdateVariableValues(this)
+			this.checkAllFeedbacks()
 		} catch (err) {
-			this.log('debug', `Poll levels: ${(err as Error).message}`)
+			this.log('debug', `Poll measurements: ${(err as Error).message}`)
 		} finally {
-			this.levelPolling = false
+			this.overviewPolling = false
+		}
+	}
+
+	private applyOverview(overview: any): void {
+		if (!overview || typeof overview !== 'object') return
+		if (Array.isArray(overview.measurements)) {
+			for (const engine of overview.measurements) {
+				const index = Number(engine.index)
+				if (!index) continue
+				Object.assign((this.state.measurements[index] ??= {}), {
+					name: engine.name,
+					active: engine.active,
+					selected: engine.selected,
+					delay: engine.delay,
+					level: engine.level,
+				})
+			}
+		}
+		if (typeof overview.synced === 'boolean') this.state.sync.synced = overview.synced
+		if (typeof overview.syncCount === 'number') {
+			const previous = this.state.sync.syncCount
+			this.state.sync.syncCount = overview.syncCount
+			if (previous !== undefined && overview.syncCount > previous) this.log('info', 'Sync All done in RiTA')
 		}
 	}
 }

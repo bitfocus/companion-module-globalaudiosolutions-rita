@@ -51,6 +51,14 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			options: [{ type: 'dropdown', id: 'signal', label: 'Signal', default: 'Pink', choices: SIGNAL_CHOICES }],
 			callback: ({ options }) => self.state.generator.signal === options.signal,
 		},
+		sync_active: {
+			type: 'boolean',
+			name: 'Sync All is set',
+			description: 'A sync is in place (some engine has Find on), which is what Sync All leaves and Clear Find removes',
+			defaultStyle: GREEN,
+			options: [],
+			callback: () => self.state.sync.synced === true,
+		},
 		measurement_active: {
 			type: 'boolean',
 			name: 'Measurement engine is active',

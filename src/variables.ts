@@ -20,6 +20,8 @@ export function UpdateVariableDefinitions(self: ModuleInstance): void {
 		average_engines: { name: 'AVG engines' },
 		average_mode: { name: 'AVG mode' },
 		average_name: { name: 'AVG last export name' },
+		sync_active: { name: 'Sync All is set' },
+		sync_count: { name: 'Sync All count this session' },
 	}
 	for (let i = 1; i <= CHANNEL_COUNT; i++) {
 		defs[`dsp_${i}_name`] = { name: `DSP ${i} name` }
@@ -58,6 +60,8 @@ export function UpdateVariableValues(self: ModuleInstance): void {
 		average_engines: Array.isArray(self.state.average.engines) ? self.state.average.engines.join(', ') : '',
 		average_mode: self.state.average.mode ?? '',
 		average_name: self.state.average.name ?? '',
+		sync_active: onOff(self.state.sync.synced, 'ON', 'OFF'),
+		sync_count: self.state.sync.syncCount ?? '',
 	}
 	for (let i = 1; i <= CHANNEL_COUNT; i++) {
 		const ch = dsp[i] ?? {}
