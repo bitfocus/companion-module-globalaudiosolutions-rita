@@ -15,7 +15,7 @@ Requires a RiTA version whose API includes change events, the 20-filter EQ and L
 
 - **Generator**: Spectrum / Live TF on/off, pink noise on/off (Live TF), signal, gain, duration, outputs.
 - **Settings**: FFT size, window, smoothing, spectrum averages, averaging, sum, plot style, coherence threshold.
-- **Measurement**: capture, activate engine, find delay, set delay, set inputs, rename, export all.
+- **Measurement**: capture, activate engine, find delay, set delay, set inputs, rename, sync all, export all.
 - **Memory**: store the trace of an engine, show/hide, rename, delete.
 - **AVG**: on/off, export impulse.
 - **DSP**: channel gain (absolute or step), delay, polarity, name, clear, EQ filter (1-20) and its on/off, alignment APF (1-2) and its on/off, high-pass and low-pass.
@@ -38,6 +38,8 @@ Requires a RiTA version whose API includes change events, the 20-filter EQ and L
 **Alignment APFs** are the 2 all-pass filters per channel that RiTA's Auto Align writes (it replaces both on every run), separate from the 20 EQ filters. They can also be set by hand: frequency, order (1 or 2) and Q. The module follows them, so buttons update after an Auto Align. Older RiTA versions do not have them.
 
 **AVG** is RiTA's average of the **selected** engines (not the active ones). **AVG: on / off** is the same control as *Settings: averaging on/off*. **AVG: export impulse** writes the impulse response of the average to the Memory Bank folder, in the format chosen in RiTA; the export runs in the background and its result (or error, such as no export folder or AVG off) is written to the log.
+
+**Measurement: sync all** is RiTA's Sync All (button and Y shortcut): it aligns with each other the engines that already have a measurement, without touching AVG. The new delays show up on the buttons at once and are written to the log. With no measured engine it answers "no active measurements".
 
 **Measurement: export all** is RiTA's Export All: it exports the **selected** engines (the engine buttons, `selected` in the API) to the project folder, in the format chosen in RiTA. If a Position is written in RiTA, each file is named `<engine>_<position>` (and the AVG export gets `_<position>` too). The export runs in the background; its result (or error, such as no engine selected or no export folder) is written to the log.
 

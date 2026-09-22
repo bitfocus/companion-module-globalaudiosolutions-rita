@@ -11,6 +11,7 @@ export type RitaAction =
 	| 'clear'
 	| 'export'
 	| 'exportAll'
+	| 'syncAll'
 	| 'refresh'
 	| 'subscribe'
 	| 'unsubscribe'

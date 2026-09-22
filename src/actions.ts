@@ -346,6 +346,29 @@ export function UpdateActions(self: ModuleInstance): void {
 				await self.refresh('average', AVERAGE_PROPS)
 			},
 		},
+		measurement_sync_all: {
+			name: 'Measurement: sync all',
+			description:
+				"RiTA's Sync All (button and Y shortcut): aligns with each other the engines that already have a measurement. It does not touch AVG.",
+			options: [],
+			callback: async () => {
+				const response = await send('syncAll', 'measurements')
+				if (!Array.isArray(response?.measurements)) return
+				for (const m of response.measurements) {
+					self.applyResponse(`measurements/${m.index}`, {
+						name: m.name,
+						active: m.active,
+						selected: m.selected,
+						delay: m.delay,
+						level: m.level,
+					})
+				}
+				const aligned = response.measurements
+					.filter((m: any) => m.active)
+					.map((m: any) => `${m.name} ${m.delay} ms`)
+				self.log('info', `Sync all: ${aligned.length ? aligned.join(', ') : 'done'}`)
+			},
+		},
 		measurement_export_all: {
 			name: 'Measurement: export all',
 			description:
