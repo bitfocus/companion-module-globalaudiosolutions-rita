@@ -1,7 +1,7 @@
 import type { CompanionActionDefinitions } from '@companion-module/base'
 import type ModuleInstance from './index.js'
 import type { ActionsSchema } from './index.js'
-import type { RitaAction } from './api.js'
+import { RitaError, type RitaAction } from './api.js'
 import { AVERAGE_PROPS, DSP_PROPS, ENGINE_PROPS } from './state.js'
 import {
 	ALIGN_APF_CHOICES,
@@ -86,6 +86,11 @@ export function UpdateActions(self: ModuleInstance): void {
 			if (action === 'set' || action === 'findDelay') self.applyResponse(target, response)
 			return response
 		} catch (err) {
+			// A linked channel (Link DSP in RiTA) follows its master, and the linked parts are read only.
+			if (err instanceof RitaError && err.code === 'read only' && target?.startsWith('dsp/out/')) {
+				self.log('warn', `${target}: read only, this part of the channel is linked to another one in RiTA`)
+				return undefined
+			}
 			self.log('warn', `${action} ${target ?? ''} failed: ${(err as Error).message}`)
 			return undefined
 		}
