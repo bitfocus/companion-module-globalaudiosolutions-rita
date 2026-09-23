@@ -13,7 +13,7 @@ Requires a RiTA version whose API includes change events, the 20-filter EQ and L
 
 ### Actions
 
-- **Generator**: Spectrum / Live TF on/off, pink noise on/off (Live TF), signal, gain, duration, outputs.
+- **Generator**: Spectrum on/off, pink noise on/off (Live TF), signal, gain, duration, outputs.
 - **Settings**: FFT size, window, smoothing, spectrum averages, averaging, sum, plot style, coherence threshold.
 - **Measurement**: capture, activate engine, find delay, set delay, set inputs, rename, sync all, export all.
 - **Memory**: store the trace of an engine, show/hide, rename, delete.
@@ -23,13 +23,11 @@ Requires a RiTA version whose API includes change events, the 20-filter EQ and L
 
 **Capture** measures on an engine with the current signal, and turns the engine on:
 - With Sweep, Multi Sweep, Pink or External it measures once. RiTA does not answer anything while it measures; the module waits for the estimated duration and then writes the result (or the error RiTA reports) to the log.
-- With Spectrum or Live TF it starts measuring continuously on that engine (or adds the engine if it is already running) until the generator is stopped. RiTA keeps answering while it runs.
+- With Spectrum it starts measuring continuously on that engine (or adds the engine if it is already running) until the generator is stopped. RiTA keeps answering while it runs.
 
-**Spectrum / Live TF on/off** selects the chosen signal if needed and measures it on the chosen engine; off stops it. Spectrum can run on several engines (deactivate one with **Measurement: activate engine**); Live TF measures one engine at a time, so turning an engine on turns the others off.
+**Spectrum on/off** selects Spectrum if needed and measures it on the chosen engine; off stops it. It can run on several engines: deactivate one with **Measurement: activate engine**.
 
-**Pink noise on/off** plays pink noise through the generator outputs while Live TF runs. Live TF itself generates nothing.
-
-**Measurement: find delay** with Live TF running starts a search on the active engine; after a few seconds the module reads the delay found and writes it to the log. Another find delay while it searches answers busy.
+**Live TF** is hidden in the RiTA beta, so it is not in the signal list. The actions that only apply to it (pink noise, and find delay while it runs) are still there in case it comes back.
 
 **Measurement: set inputs** sets the measurement input of that engine only. In 1 Ref. Channel mode the reference input goes to all eight engines.
 
@@ -45,7 +43,7 @@ RiTA does not send events for the sync, so the module reads it with the level me
 
 **Measurement: export all** is RiTA's Export All: it exports the **selected** engines (the engine buttons, `selected` in the API) to the project folder, in the format chosen in RiTA. If a Position is written in RiTA, each file is named `<engine>_<position>` (and the AVG export gets `_<position>` too). The export runs in the background; its result (or error, such as no engine selected or no export folder) is written to the log.
 
-The **Settings** variables follow RiTA, they are not remembered by the module: starting Live TF with smoothing on makes RiTA switch `fftSize` to `64 FPPO` by itself, and the module shows that instead of putting the old value back.
+The **Settings** variables follow RiTA and are never put back by the module: if RiTA changes one by itself, that is what the buttons show.
 
 **Linked channels (Link DSP)**: in RiTA a channel can follow another one. The linked parts of the slave channel (gain, delay, polarity, crossovers, EQ filters, alignment APFs and FIRs, each group on its own) cannot be written: those actions do nothing and write "read only, this part of the channel is linked to another one in RiTA" to the log. Rename still works. The API does not say which channel is the master.
 

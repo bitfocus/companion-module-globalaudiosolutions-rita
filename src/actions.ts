@@ -6,7 +6,6 @@ import { AVERAGE_PROPS, DSP_PROPS, ENGINE_PROPS } from './state.js'
 import {
 	ALIGN_APF_CHOICES,
 	CHANNEL_CHOICES,
-	CONTINUOUS_SIGNAL_CHOICES,
 	DURATION_CHOICES,
 	ENGINE_CHOICES,
 	FFT_SIZE_CHOICES,
@@ -129,32 +128,24 @@ export function UpdateActions(self: ModuleInstance): void {
 
 	const actions: CompanionActionDefinitions<ActionsSchema> = {
 		generator_spectrum: {
-			name: 'Generator: Spectrum / Live TF on / off',
+			name: 'Generator: Spectrum on / off',
 			description:
-				'On: selects the signal and measures it continuously on the chosen engine. Spectrum adds the engine to the ones already running; Live TF measures one engine at a time. Off: stops it.',
-			options: [
-				modeOption,
-				{ type: 'dropdown', id: 'signal', label: 'Signal', default: 'Spectrum', choices: CONTINUOUS_SIGNAL_CHOICES },
-				engineOption,
-			],
+				'On: selects Spectrum and measures it continuously on the chosen engine, adding it to the ones already running. Off: stops it.',
+			options: [modeOption, engineOption],
 			callback: async ({ options }) => {
-				const signal = String(options.signal ?? 'Spectrum')
-				const { running, signal: current } = self.state.generator
-				if (!resolveBool(options.mode, running === true && current === signal)) {
+				const { running, signal } = self.state.generator
+				if (!resolveBool(options.mode, running === true && signal === 'Spectrum')) {
 					await send('set', 'generator', { running: false })
 					return
 				}
-				if (current !== signal) {
-					// Switching Spectrum <-> Live TF: stop the loop before changing the signal.
-					if (running && !(await send('set', 'generator', { running: false }))) return
-					if (!(await send('set', 'generator', { signal }))) return
-				}
+				if (signal !== 'Spectrum' && !(await send('set', 'generator', { signal: 'Spectrum' }))) return
 				await capture(Number(options.engine ?? 1))
 			},
 		},
 		generator_pink_noise: {
 			name: 'Generator: pink noise on / off (Live TF)',
-			description: 'With Live TF running, plays pink noise through the generator outputs at the generator gain.',
+			description:
+				'The pink noise switch of the LIVE TF tab. Live TF is hidden in the RiTA beta, so this does nothing there.',
 			options: [modeOption],
 			callback: async ({ options }) => {
 				await send('set', 'generator', { pinkNoise: resolveBool(options.mode, self.state.generator.pinkNoise) })
@@ -256,7 +247,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Measurement: capture',
 			description:
 				'Turns the engine on and measures with the current signal. Sweep, Multi Sweep, Pink and External measure once ' +
-				'and RiTA does not answer anything else until they finish. Spectrum and Live TF keep measuring until the generator is stopped.',
+				'and RiTA does not answer anything else until they finish. Spectrum keeps measuring until the generator is stopped.',
 			options: [engineOption],
 			callback: async ({ options }) => {
 				await capture(Number(options.engine))

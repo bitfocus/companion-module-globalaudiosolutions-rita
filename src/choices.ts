@@ -17,8 +17,8 @@ export const ON_OFF_TOGGLE_CHOICES: Choice[] = [
 	{ id: 'toggle', label: 'Toggle' },
 ]
 
-export const SIGNAL_CHOICES = same(['Sweep', 'Multi Sweep', 'Pink', 'External', 'Spectrum', 'Live TF'])
-export const CONTINUOUS_SIGNAL_CHOICES = same(['Spectrum', 'Live TF'])
+// Live TF is hidden in the RiTA beta: no tab and no entry in the signal list.
+export const SIGNAL_CHOICES = same(['Sweep', 'Multi Sweep', 'Pink', 'External', 'Spectrum'])
 export const DURATION_CHOICES: Choice[] = ['1', '2', '4', '8', '16'].map((v) => ({ id: v, label: `${v} s` }))
 
 export const FFT_SIZE_CHOICES = same(['64 FPPO', '32768', '16384', '8192', '4096', '2048', '1024', '512', '256', '128'])
