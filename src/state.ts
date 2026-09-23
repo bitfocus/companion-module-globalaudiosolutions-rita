@@ -39,6 +39,16 @@ export interface AverageState {
 	name?: string
 }
 
+export interface SettingsState {
+	fftSize?: string
+	window?: string
+	smoothing?: string
+	spectrumAverages?: string
+	averaging?: boolean
+	sum?: boolean
+	coherenceThreshold?: number
+}
+
 export interface SyncState {
 	synced?: boolean
 	syncCount?: number
@@ -46,6 +56,7 @@ export interface SyncState {
 
 export interface RitaState {
 	generator: GeneratorState
+	settings: SettingsState
 	sync: SyncState
 	dsp: Record<number, DspChannelState>
 	measurements: Record<number, MeasurementState>
@@ -61,9 +72,27 @@ export const DSP_PROPS = ['name', 'gain', 'delay', 'polarity']
 export const ENGINE_PROPS = ['name', 'active', 'selected', 'delay', 'level']
 export const ALIGN_APF_PROPS = ['enabled', 'frequency', 'order', 'q']
 export const AVERAGE_PROPS = ['active', 'count', 'hasData', 'engines', 'mode', 'name']
+// RiTA changes fftSize on its own when Live TF starts with smoothing on, so it is followed, never restored.
+export const SETTINGS_PROPS = [
+	'fftSize',
+	'window',
+	'smoothing',
+	'spectrumAverages',
+	'averaging',
+	'sum',
+	'coherenceThreshold',
+]
 
 export function createEmptyState(): RitaState {
-	const state: RitaState = { generator: {}, sync: {}, dsp: {}, measurements: {}, alignApf: {}, average: {} }
+	const state: RitaState = {
+		generator: {},
+		settings: {},
+		sync: {},
+		dsp: {},
+		measurements: {},
+		alignApf: {},
+		average: {},
+	}
 	for (let i = 1; i <= CHANNEL_COUNT; i++) {
 		state.dsp[i] = {}
 		state.alignApf[i] = {}

@@ -45,6 +45,8 @@ RiTA does not send events for the sync, so the module reads it with the level me
 
 **Measurement: export all** is RiTA's Export All: it exports the **selected** engines (the engine buttons, `selected` in the API) to the project folder, in the format chosen in RiTA. If a Position is written in RiTA, each file is named `<engine>_<position>` (and the AVG export gets `_<position>` too). The export runs in the background; its result (or error, such as no engine selected or no export folder) is written to the log.
 
+The **Settings** variables follow RiTA, they are not remembered by the module: starting Live TF with smoothing on makes RiTA switch `fftSize` to `64 FPPO` by itself, and the module shows that instead of putting the old value back.
+
 **Linked channels (Link DSP)**: in RiTA a channel can follow another one. The linked parts of the slave channel (gain, delay, polarity, crossovers, EQ filters, alignment APFs and FIRs, each group on its own) cannot be written: those actions do nothing and write "read only, this part of the channel is linked to another one in RiTA" to the log. Rename still works. The API does not say which channel is the master.
 
 **DSP: clear channel** is the Clear button of the row, and also clears that engine measurement.
@@ -56,6 +58,7 @@ Connected, Sync All is set, AVG on, AVG has a curve, generator running, generato
 ### Variables
 
 - `$(rita:generator_running)`, `generator_signal`, `generator_gain`, `generator_duration`, `generator_output1`, `generator_output2`, `generator_pink_noise`
+- `$(rita:settings_fft_size)`, `settings_window`, `settings_smoothing`, `settings_spectrum_averages`, `settings_averaging`, `settings_sum`, `settings_coherence_threshold`
 - `$(rita:sync_active)`, `sync_count`
 - `$(rita:average_active)`, `average_has_data`, `average_count`, `average_engines`, `average_mode`, `average_name`
 - `$(rita:dsp_N_name)`, `dsp_N_gain`, `dsp_N_delay`, `dsp_N_polarity` for N = 1..8

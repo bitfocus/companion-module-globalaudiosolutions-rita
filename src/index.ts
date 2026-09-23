@@ -16,6 +16,7 @@ import {
 	DSP_PROPS,
 	ENGINE_COUNT,
 	ENGINE_PROPS,
+	SETTINGS_PROPS,
 	createEmptyState,
 	type RitaState,
 } from './state.js'
@@ -113,6 +114,8 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		let match: RegExpMatchArray | null
 		if (target === 'generator') {
 			Object.assign(this.state.generator, body)
+		} else if (target === 'settings') {
+			Object.assign(this.state.settings, body)
 		} else if (target === 'average') {
 			Object.assign(this.state.average, body)
 		} else if ((match = target.match(/^dsp\/out\/(\d+)$/))) {
@@ -195,6 +198,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		this.averageSupported = true
 		const targets: [string, string[] | undefined][] = [
 			['generator', undefined],
+			['settings', SETTINGS_PROPS],
 			['average', AVERAGE_PROPS],
 		]
 		for (let i = 1; i <= CHANNEL_COUNT; i++) targets.push([`dsp/out/${i}`, DSP_PROPS])
@@ -274,6 +278,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 
 			const generator = await read('generator')
 			if (generator) this.state.generator = generator
+			this.applyResponse('settings', await read('settings', SETTINGS_PROPS))
 
 			// A bare get of dsp/out/N also dumps its filters and FIRs.
 			for (let i = 1; i <= CHANNEL_COUNT; i++) {
