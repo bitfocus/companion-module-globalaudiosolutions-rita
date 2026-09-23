@@ -142,15 +142,6 @@ export function UpdateActions(self: ModuleInstance): void {
 				await capture(Number(options.engine ?? 1))
 			},
 		},
-		generator_pink_noise: {
-			name: 'Generator: pink noise on / off (Live TF)',
-			description:
-				'The pink noise switch of the LIVE TF tab. Live TF is hidden in the RiTA beta, so this does nothing there.',
-			options: [modeOption],
-			callback: async ({ options }) => {
-				await send('set', 'generator', { pinkNoise: resolveBool(options.mode, self.state.generator.pinkNoise) })
-			},
-		},
 		generator_signal: {
 			name: 'Generator: set signal',
 			options: [{ type: 'dropdown', id: 'signal', label: 'Signal', default: 'Sweep', choices: SIGNAL_CHOICES }],

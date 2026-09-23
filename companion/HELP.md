@@ -13,7 +13,7 @@ Requires a RiTA version whose API includes change events, the 20-filter EQ and L
 
 ### Actions
 
-- **Generator**: Spectrum on/off, pink noise on/off (Live TF), signal, gain, duration, outputs.
+- **Generator**: Spectrum on/off, signal, gain, duration, outputs.
 - **Settings**: FFT size, window, smoothing, spectrum averages, averaging, sum, plot style, coherence threshold.
 - **Measurement**: capture, activate engine, find delay, set delay, set inputs, rename, sync all, export all.
 - **Memory**: store the trace of an engine, show/hide, rename, delete.
@@ -27,7 +27,7 @@ Requires a RiTA version whose API includes change events, the 20-filter EQ and L
 
 **Spectrum on/off** selects Spectrum if needed and measures it on the chosen engine; off stops it. It can run on several engines: deactivate one with **Measurement: activate engine**.
 
-**Live TF** is hidden in the RiTA beta, so it is not in the signal list. The actions that only apply to it (pink noise, and find delay while it runs) are still there in case it comes back.
+**Live TF** is hidden in the RiTA beta: it is not in the signal list and the generator has no pink noise switch.
 
 **Measurement: set inputs** sets the measurement input of that engine only. In 1 Ref. Channel mode the reference input goes to all eight engines.
 
@@ -51,11 +51,11 @@ The **Settings** variables follow RiTA and are never put back by the module: if 
 
 ### Feedbacks
 
-Connected, Sync All is set, AVG on, AVG has a curve, generator running, generator pink noise, generator signal, engine active, engine selected, DSP polarity inverted, DSP alignment APF enabled.
+Connected, Sync All is set, AVG on, AVG has a curve, generator running, generator signal, engine active, engine selected, DSP polarity inverted, DSP alignment APF enabled.
 
 ### Variables
 
-- `$(rita:generator_running)`, `generator_signal`, `generator_gain`, `generator_duration`, `generator_output1`, `generator_output2`, `generator_pink_noise`
+- `$(rita:generator_running)`, `generator_signal`, `generator_gain`, `generator_duration`, `generator_output1`, `generator_output2`
 - `$(rita:settings_fft_size)`, `settings_window`, `settings_smoothing`, `settings_spectrum_averages`, `settings_averaging`, `settings_sum`, `settings_coherence_threshold`
 - `$(rita:sync_active)`, `sync_count`
 - `$(rita:average_active)`, `average_has_data`, `average_count`, `average_engines`, `average_mode`, `average_name`
