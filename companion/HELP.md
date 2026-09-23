@@ -47,7 +47,9 @@ The **Settings** variables follow RiTA and are never put back by the module: if 
 
 **Linked channels (Link DSP)**: in RiTA a channel can follow another one. The linked parts of the slave channel (gain, delay, polarity, crossovers, EQ filters, alignment APFs and FIRs, each group on its own) cannot be written: those actions do nothing and write "read only, this part of the channel is linked to another one in RiTA" to the log. Rename still works. The API does not say which channel is the master.
 
-**DSP: clear channel** is the Clear button of the row, and also clears that engine measurement.
+**DSP: clear channel is the exception**: on a linked channel it undoes the link and then resets the channel, exactly as RiTA's own Clear button does, with no confirmation.
+
+**DSP: clear channel** is the Clear button of the row: it also clears that engine measurement, and on a linked channel it undoes the link first.
 
 ### Feedbacks
 

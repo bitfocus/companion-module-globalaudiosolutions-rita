@@ -466,7 +466,9 @@ export function UpdateActions(self: ModuleInstance): void {
 		},
 		dsp_clear: {
 			name: 'DSP: clear channel',
-			description: 'Same as the Clear button of the row: resets the channel and also clears that engine measurement.',
+			description:
+				'Same as the Clear button of the row: resets the channel and also clears that engine measurement. ' +
+				'On a linked channel it also undoes the link, as RiTA does, and without asking.',
 			options: [channelOption],
 			callback: async ({ options }) => {
 				const channel = Number(options.channel)
