@@ -86,6 +86,10 @@ export function UpdateActions(self: ModuleInstance): void {
 			return response
 		} catch (err) {
 			// A linked channel (Link DSP in RiTA) follows its master, and the linked parts are read only.
+			if (err instanceof RitaError && err.code === 'find in place') {
+				self.log('warn', 'Clear delays needs the find cleared first: use Measurement: clear find')
+				return undefined
+			}
 			if (err instanceof RitaError && err.code === 'read only' && target?.startsWith('dsp/out/')) {
 				self.log('warn', `${target}: read only, this part of the channel is linked to another one in RiTA`)
 				return undefined
@@ -354,6 +358,38 @@ export function UpdateActions(self: ModuleInstance): void {
 					.filter((m: any) => m.active)
 					.map((m: any) => `${m.name} ${m.delay} ms`)
 				self.log('info', `Sync all: ${aligned.length ? aligned.join(', ') : 'done'}`)
+			},
+		},
+		measurement_clear_find: {
+			name: 'Measurement: clear find',
+			description: "RiTA's Clear Find: removes the sync left by Sync All.",
+			options: [],
+			callback: async () => {
+				const response = await send('clearFind', 'measurements')
+				if (response) self.applyOverview(response)
+			},
+		},
+		measurement_clear_delays: {
+			name: 'Measurement: clear delays',
+			description:
+				"RiTA's Clear delays: sets the DSP delay of the 8 channels to 0. As in RiTA it is refused while a sync is in place: clear the find first.",
+			options: [],
+			callback: async () => {
+				const response = await send('clearDelays', 'measurements')
+				if (response) self.applyOverview(response)
+			},
+		},
+		measurement_clear_all: {
+			name: 'Measurement: clear everything',
+			description:
+				"RiTA's Clear with Everything, and with no dialog: it wipes the measurements, the DSP and the names of all the channels.",
+			options: [],
+			callback: async () => {
+				const response = await send('clearAll', 'measurements')
+				if (response) {
+					self.applyOverview(response)
+					self.log('info', 'Cleared everything: measurements, DSP and names')
+				}
 			},
 		},
 		measurement_export_all: {

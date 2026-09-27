@@ -360,7 +360,8 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		}
 	}
 
-	private applyOverview(overview: any): void {
+	/** The measurements list, as answered by get and by syncAll, clearFind, clearDelays and clearAll. */
+	applyOverview(overview: any): void {
 		if (!overview || typeof overview !== 'object') return
 		if (Array.isArray(overview.measurements)) {
 			for (const engine of overview.measurements) {
@@ -371,11 +372,13 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 					active: engine.active,
 					selected: engine.selected,
 					delay: engine.delay,
+					dspDelay: engine.dspDelay,
 					level: engine.level,
 				})
 			}
 		}
 		if (typeof overview.synced === 'boolean') this.state.sync.synced = overview.synced
+		if (typeof overview.canSync === 'boolean') this.state.sync.canSync = overview.canSync
 		if (typeof overview.syncCount === 'number') {
 			const previous = this.state.sync.syncCount
 			this.state.sync.syncCount = overview.syncCount

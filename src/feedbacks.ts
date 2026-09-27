@@ -52,6 +52,14 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			options: [],
 			callback: () => self.state.sync.synced === true,
 		},
+		sync_possible: {
+			type: 'boolean',
+			name: 'Sync All is possible',
+			description: 'Some engine has a measurement, which is what Sync All needs',
+			defaultStyle: GREEN,
+			options: [],
+			callback: () => self.state.sync.canSync === true,
+		},
 		measurement_active: {
 			type: 'boolean',
 			name: 'Measurement engine is active',

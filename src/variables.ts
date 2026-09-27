@@ -28,6 +28,7 @@ export function UpdateVariableDefinitions(self: ModuleInstance): void {
 		settings_coherence_threshold: { name: 'Coherence threshold' },
 		sync_active: { name: 'Sync All is set' },
 		sync_count: { name: 'Sync All count this session' },
+		sync_possible: { name: 'Sync All is possible' },
 	}
 	for (let i = 1; i <= CHANNEL_COUNT; i++) {
 		defs[`dsp_${i}_name`] = { name: `DSP ${i} name` }
@@ -45,6 +46,7 @@ export function UpdateVariableDefinitions(self: ModuleInstance): void {
 		defs[`meas_${i}_name`] = { name: `Engine ${i} name` }
 		defs[`meas_${i}_active`] = { name: `Engine ${i} active` }
 		defs[`meas_${i}_delay`] = { name: `Engine ${i} delay (ms)` }
+		defs[`meas_${i}_dsp_delay`] = { name: `Engine ${i} DSP delay (ms)` }
 		defs[`meas_${i}_level`] = { name: `Engine ${i} level` }
 	}
 	self.setVariableDefinitions(defs)
@@ -74,6 +76,7 @@ export function UpdateVariableValues(self: ModuleInstance): void {
 		settings_coherence_threshold: self.state.settings.coherenceThreshold ?? '',
 		sync_active: onOff(self.state.sync.synced, 'ON', 'OFF'),
 		sync_count: self.state.sync.syncCount ?? '',
+		sync_possible: onOff(self.state.sync.canSync, 'YES', 'NO'),
 	}
 	for (let i = 1; i <= CHANNEL_COUNT; i++) {
 		const ch = dsp[i] ?? {}
@@ -94,6 +97,7 @@ export function UpdateVariableValues(self: ModuleInstance): void {
 		values[`meas_${i}_name`] = m.name ?? ''
 		values[`meas_${i}_active`] = onOff(m.active, 'ON', 'OFF')
 		values[`meas_${i}_delay`] = m.delay ?? ''
+		values[`meas_${i}_dsp_delay`] = m.dspDelay ?? ''
 		values[`meas_${i}_level`] = m.level ?? ''
 	}
 	self.setVariableValues(values)

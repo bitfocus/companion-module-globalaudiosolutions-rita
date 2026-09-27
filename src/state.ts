@@ -19,6 +19,8 @@ export interface MeasurementState {
 	active?: boolean
 	selected?: boolean
 	delay?: number
+	// The arrival of the measurement; dspDelay is the delay of the DSP channel, what Sync All writes.
+	dspDelay?: number
 	level?: number
 }
 
@@ -51,6 +53,7 @@ export interface SettingsState {
 export interface SyncState {
 	synced?: boolean
 	syncCount?: number
+	canSync?: boolean
 }
 
 export interface RitaState {
