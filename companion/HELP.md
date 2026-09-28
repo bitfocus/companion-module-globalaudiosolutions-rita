@@ -21,7 +21,9 @@ Requires a RiTA version whose API includes change events, the 20-filter EQ and L
 - **DSP**: channel gain (absolute or step), delay, polarity, name, clear, EQ filter (1-20) and its on/off, alignment APF (1-2) and its on/off, high-pass and low-pass.
 - **Advanced: send API command**: any request with a JSON properties field, for objects not covered above.
 
-**Capture** measures on an engine with the current signal, and turns the engine on:
+When RiTA would have shown a message box, it answers anyway and puts the text in the reply; the module writes those to the log as "RiTA: …". Warnings and errors reported by a capture or an export show up there too.
+
+**Capture** measures on an engine with the current signal, and turns the engine on. While a continuous measurement (Spectrum) is running, a one-shot capture is refused: stop it first with **Generator: Spectrum on / off**.
 - With Sweep, Multi Sweep, Pink or External it measures once. RiTA does not answer anything while it measures; the module waits for the estimated duration and then writes the result (or the error RiTA reports) to the log.
 - With Spectrum it starts measuring continuously on that engine (or adds the engine if it is already running) until the generator is stopped. RiTA keeps answering while it runs.
 

@@ -22,7 +22,9 @@ import {
 } from './choices.js'
 
 // RiTA refuses these while a find holds a delay that would not fit the new window.
-const FIND_HINT = 'RiTA refused the value; if a find is in place, clear it first with Measurement: clear find'
+const FIND_HINT = {
+	'unknown value': 'RiTA refused the value; if a find is in place, clear it first with Measurement: clear find',
+}
 
 function resolveBool(mode: unknown, current: boolean | undefined): boolean {
 	if (mode === 'on') return true
@@ -82,14 +84,21 @@ const slotOption = {
 
 export function UpdateActions(self: ModuleInstance): void {
 	// Errors from RiTA (busy, unknown value, ...) are logged instead of thrown into Companion.
-	const send = async (action: RitaAction, target?: string, properties?: unknown, hint?: string): Promise<any> => {
+	// hints: a friendlier text for a given RiTA error code, instead of the bare code.
+	const send = async (
+		action: RitaAction,
+		target?: string,
+		properties?: unknown,
+		hints?: Record<string, string>,
+	): Promise<any> => {
 		try {
 			const response = await self.rita.send(action, target, properties)
 			if (action === 'set' || action === 'findDelay') self.applyResponse(target, response)
+			self.logNotices(response)
 			return response
 		} catch (err) {
-			if (hint && err instanceof RitaError && err.code === 'unknown value') {
-				self.log('warn', `${action} ${target ?? ''}: ${hint}`)
+			if (err instanceof RitaError && hints?.[err.code]) {
+				self.log('warn', `${action} ${target ?? ''}: ${hints[err.code]}`)
 				return undefined
 			}
 			// A linked channel (Link DSP in RiTA) follows its master, and the linked parts are read only.
@@ -109,7 +118,9 @@ export function UpdateActions(self: ModuleInstance): void {
 	// Sweep, Multi Sweep, Pink and External measure once and block RiTA until done;
 	// Spectrum and Live TF answer continuous:true and keep running until the generator is stopped.
 	const capture = async (engine: number): Promise<void> => {
-		const response = await send('capture', `measurements/${engine}`)
+		const response = await send('capture', `measurements/${engine}`, undefined, {
+			'generator running': 'a continuous measurement is running: stop it first with Generator: Spectrum on / off',
+		})
 		if (!response) return
 		if (response.continuous) {
 			self.log('info', `${response.signal ?? 'Continuous measurement'} running on engine ${engine}`)
@@ -193,7 +204,10 @@ export function UpdateActions(self: ModuleInstance): void {
 					'set',
 					'generator',
 					{ output1, output2 },
-					'RiTA refused these outputs: they cannot be the same, the card must have them, and swapping the two at once needs a third channel in between',
+					{
+						'unknown value':
+							'RiTA refused these outputs: the card must have them, and swapping the two at once needs a third channel in between',
+					},
 				)
 			},
 		},

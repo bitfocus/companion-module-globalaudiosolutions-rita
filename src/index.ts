@@ -162,6 +162,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 	private async reportCapture(engine: number): Promise<void> {
 		try {
 			const status = await this.rita.send('get', `measurements/${engine}`, ['captureStatus'])
+			this.logNotices(status)
 			if (status.lastError) {
 				this.log('error', `Capture on engine ${engine} failed: ${status.lastError} ${status.lastErrorAt ?? ''}`.trim())
 			} else if (status.warning) {
@@ -357,6 +358,15 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 			this.log('debug', `Poll measurements: ${(err as Error).message}`)
 		} finally {
 			this.overviewPolling = false
+		}
+	}
+
+	/** Message boxes RiTA would have shown: it answers instead of waiting for an OK, and says so here. */
+	logNotices(response: any): void {
+		if (!Array.isArray(response?.notices)) return
+		for (const notice of response.notices) {
+			const answer = notice?.answer ? ` (answered ${notice.answer})` : ''
+			this.log('warn', `RiTA: ${notice?.title ?? ''} ${notice?.message ?? ''}${answer}`.trim())
 		}
 	}
 
