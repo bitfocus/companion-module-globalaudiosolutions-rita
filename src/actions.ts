@@ -21,6 +21,9 @@ import {
 	XOVER_TYPE_CHOICES,
 } from './choices.js'
 
+// RiTA refuses these while a find holds a delay that would not fit the new window.
+const FIND_HINT = 'RiTA refused the value; if a find is in place, clear it first with Measurement: clear find'
+
 function resolveBool(mode: unknown, current: boolean | undefined): boolean {
 	if (mode === 'on') return true
 	if (mode === 'off') return false
@@ -79,12 +82,16 @@ const slotOption = {
 
 export function UpdateActions(self: ModuleInstance): void {
 	// Errors from RiTA (busy, unknown value, ...) are logged instead of thrown into Companion.
-	const send = async (action: RitaAction, target?: string, properties?: unknown): Promise<any> => {
+	const send = async (action: RitaAction, target?: string, properties?: unknown, hint?: string): Promise<any> => {
 		try {
 			const response = await self.rita.send(action, target, properties)
 			if (action === 'set' || action === 'findDelay') self.applyResponse(target, response)
 			return response
 		} catch (err) {
+			if (hint && err instanceof RitaError && err.code === 'unknown value') {
+				self.log('warn', `${action} ${target ?? ''}: ${hint}`)
+				return undefined
+			}
 			// A linked channel (Link DSP in RiTA) follows its master, and the linked parts are read only.
 			if (err instanceof RitaError && err.code === 'find in place') {
 				self.log('warn', 'Clear delays needs the find cleared first: use Measurement: clear find')
@@ -169,13 +176,25 @@ export function UpdateActions(self: ModuleInstance): void {
 		},
 		generator_outputs: {
 			name: 'Generator: set outputs',
-			description: 'Sound card output channels. RiTA only accepts channels the card has.',
+			description:
+				'Sound card output channels. RiTA only accepts channels the card has, and the two outputs cannot be the same.',
 			options: [
 				{ type: 'number', id: 'output1', label: 'Output 1', default: 1, min: 1, max: 64, asInteger: true },
 				{ type: 'number', id: 'output2', label: 'Output 2', default: 2, min: 1, max: 64, asInteger: true },
 			],
 			callback: async ({ options }) => {
-				await send('set', 'generator', { output1: String(options.output1), output2: String(options.output2) })
+				const output1 = String(options.output1)
+				const output2 = String(options.output2)
+				if (output1 === output2) {
+					self.log('warn', 'Generator outputs: the two outputs cannot be the same channel')
+					return
+				}
+				await send(
+					'set',
+					'generator',
+					{ output1, output2 },
+					'RiTA refused these outputs: they cannot be the same, the card must have them, and swapping the two at once needs a third channel in between',
+				)
 			},
 		},
 
@@ -183,7 +202,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Settings: FFT size',
 			options: [{ type: 'dropdown', id: 'value', label: 'FFT size', default: '16384', choices: FFT_SIZE_CHOICES }],
 			callback: async ({ options }) => {
-				await send('set', 'settings', { fftSize: options.value })
+				await send('set', 'settings', { fftSize: options.value }, FIND_HINT)
 			},
 		},
 		settings_window: {
@@ -197,7 +216,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Settings: smoothing',
 			options: [{ type: 'dropdown', id: 'value', label: 'Smoothing', default: 'None', choices: SMOOTHING_CHOICES }],
 			callback: async ({ options }) => {
-				await send('set', 'settings', { smoothing: options.value })
+				await send('set', 'settings', { smoothing: options.value }, FIND_HINT)
 			},
 		},
 		settings_spectrum_averages: {

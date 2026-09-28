@@ -220,8 +220,9 @@ export class RitaClient {
 		if (this.destroyed || this.reconnectTimer) return
 		this.reconnectTimer = setTimeout(() => {
 			this.reconnectTimer = undefined
-			// The port just left is the one RiTA may not accept again: start after it and go round.
-			this.portOffset = this.lastGoodOffset >= 0 ? (this.lastGoodOffset + 1) % CONTROL_PORT_SPAN : 0
+			// RiTA hands the same port back when the old connection is dead; if it is still alive,
+			// the handshake is closed at once and the loop moves on to the next one.
+			this.portOffset = this.lastGoodOffset >= 0 ? this.lastGoodOffset : 0
 			this.portsTried = 0
 			this.open()
 		}, RECONNECT_DELAY_MS)
