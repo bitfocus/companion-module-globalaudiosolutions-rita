@@ -145,7 +145,17 @@ export function UpdateActions(self: ModuleInstance): void {
 				max: 8,
 				asInteger: true,
 			},
-			{ type: 'number', id: 'q', label: 'Q', default: 0.707, min: 0.1, max: 10, step: 0.01 },
+			// In a crossover this is not a Q: it is the passband ripple in dB on Chebyshev I and
+			// Eliptic, the stopband attenuation in dB on Chebyshev II, and ignored by the rest.
+			{
+				type: 'number',
+				id: 'q',
+				label: 'Ripple or attenuation (dB), Chebyshev and Eliptic only',
+				default: 1,
+				min: 0.1,
+				max: 120,
+				step: 0.1,
+			},
 		] as const
 
 	const actions: CompanionActionDefinitions<ActionsSchema> = {

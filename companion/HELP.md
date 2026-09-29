@@ -35,6 +35,8 @@ When RiTA would have shown a message box, it answers anyway and puts the text in
 
 **EQ filters** start disabled in RiTA: a filter that is not enabled is stored but does not sound. Gain applies to Parametric and the shelving types, order to APF and FIR RevPhase.
 
+In the **crossovers** (high-pass and low-pass) the last number is not a Q: it is the passband ripple in dB on Chebyshev I and Eliptic, the stopband attenuation in dB on Chebyshev II, and Butterworth, Linkwitz-Riley and Bessel ignore it. It takes 0.1 to 120. The Q of the **EQ filters** is a real Q factor, 0.1 to 10.
+
 **Alignment APFs** are the 2 all-pass filters per channel that RiTA's Auto Align writes (it replaces both on every run), separate from the 20 EQ filters. They can also be set by hand: frequency, order (1 or 2) and Q. The module follows them, so buttons update after an Auto Align. Older RiTA versions do not have them.
 
 **AVG** is RiTA's average of the **selected** engines (not the active ones). **AVG: on / off** is the same control as *Settings: averaging on/off*. **AVG: export impulse** writes the impulse response of the average to the Memory Bank folder, in the format chosen in RiTA; the export runs in the background and its result (or error, such as no export folder or AVG off) is written to the log.
