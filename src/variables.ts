@@ -1,6 +1,6 @@
 import type { CompanionVariableDefinitions, CompanionVariableValues } from '@companion-module/base'
 import type ModuleInstance from './index.js'
-import { ALIGN_APF_COUNT, CHANNEL_COUNT, ENGINE_COUNT } from './state.js'
+import { ALIGN_APF_COUNT, CHANNEL_COUNT, ENGINE_COUNT, MUTE_GROUP_COUNT } from './state.js'
 
 const onOff = (value: boolean | undefined, on: string, off: string): string =>
 	value === undefined ? '' : value ? on : off
@@ -48,6 +48,11 @@ export function UpdateVariableDefinitions(self: ModuleInstance): void {
 		defs[`meas_${i}_delay`] = { name: `Engine ${i} delay (ms)` }
 		defs[`meas_${i}_dsp_delay`] = { name: `Engine ${i} DSP delay (ms)` }
 		defs[`meas_${i}_level`] = { name: `Engine ${i} level` }
+	}
+	for (let i = 1; i <= MUTE_GROUP_COUNT; i++) {
+		defs[`mute_group_${i}_name`] = { name: `Mute group ${i} name` }
+		defs[`mute_group_${i}_muted`] = { name: `Mute group ${i} muted` }
+		defs[`mute_group_${i}_available`] = { name: `Mute group ${i} has channels` }
 	}
 	self.setVariableDefinitions(defs)
 }
@@ -99,6 +104,12 @@ export function UpdateVariableValues(self: ModuleInstance): void {
 		values[`meas_${i}_delay`] = m.delay ?? ''
 		values[`meas_${i}_dsp_delay`] = m.dspDelay ?? ''
 		values[`meas_${i}_level`] = m.level ?? ''
+	}
+	for (let i = 1; i <= MUTE_GROUP_COUNT; i++) {
+		const group = self.state.muteGroups[i] ?? {}
+		values[`mute_group_${i}_name`] = group.name ?? ''
+		values[`mute_group_${i}_muted`] = onOff(group.muted, 'MUTE', 'ON')
+		values[`mute_group_${i}_available`] = onOff(group.available, 'YES', 'NO')
 	}
 	self.setVariableValues(values)
 }

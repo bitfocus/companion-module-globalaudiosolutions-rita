@@ -50,6 +50,12 @@ export interface SettingsState {
 	coherenceThreshold?: number
 }
 
+export interface MuteGroupState {
+	name?: string
+	muted?: boolean
+	available?: boolean
+}
+
 export interface SyncState {
 	synced?: boolean
 	syncCount?: number
@@ -64,11 +70,15 @@ export interface RitaState {
 	measurements: Record<number, MeasurementState>
 	alignApf: Record<number, Record<number, AlignApfState>>
 	average: AverageState
+	muteGroups: Record<number, MuteGroupState>
 }
 
 export const CHANNEL_COUNT = 8
 export const ENGINE_COUNT = 8
 export const ALIGN_APF_COUNT = 2
+// The 4 assignable mute buttons of the external processor; the channels are assigned in RiTA.
+export const MUTE_GROUP_COUNT = 4
+export const MUTE_GROUP_PROPS = ['name', 'muted', 'available']
 
 export const DSP_PROPS = ['name', 'gain', 'delay', 'polarity']
 export const ENGINE_PROPS = ['name', 'active', 'selected', 'delay', 'level']
@@ -94,7 +104,9 @@ export function createEmptyState(): RitaState {
 		measurements: {},
 		alignApf: {},
 		average: {},
+		muteGroups: {},
 	}
+	for (let i = 1; i <= MUTE_GROUP_COUNT; i++) state.muteGroups[i] = {}
 	for (let i = 1; i <= CHANNEL_COUNT; i++) {
 		state.dsp[i] = {}
 		state.alignApf[i] = {}

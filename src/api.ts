@@ -15,6 +15,7 @@ export type RitaAction =
 	| 'clearFind'
 	| 'clearDelays'
 	| 'clearAll'
+	| 'toggle'
 	| 'refresh'
 	| 'subscribe'
 	| 'unsubscribe'

@@ -7,6 +7,7 @@ import {
 	ALIGN_APF_CHOICES,
 	CHANNEL_CHOICES,
 	DURATION_CHOICES,
+	MUTE_GROUP_CHOICES,
 	ENGINE_CHOICES,
 	FFT_SIZE_CHOICES,
 	ON_OFF_TOGGLE_CHOICES,
@@ -354,6 +355,30 @@ export function UpdateActions(self: ModuleInstance): void {
 			options: [engineOption, { type: 'textinput', id: 'name', label: 'Name', default: '', useVariables: true }],
 			callback: async ({ options }) => {
 				await send('set', `measurements/${options.engine}`, { name: String(options.name) })
+			},
+		},
+
+		mute_group: {
+			name: 'Mute group: mute / unmute',
+			description:
+				'One of the 4 mute buttons of the external processor. Toggle does what the button in RiTA does: it unmutes the group when every channel is muted, and mutes it otherwise. The channels of each group are assigned in RiTA.',
+			options: [
+				{ type: 'dropdown', id: 'group', label: 'Mute group', default: '1', choices: MUTE_GROUP_CHOICES },
+				modeOption,
+			],
+			callback: async ({ options }) => {
+				const group = Number(options.group)
+				const target = `muteGroups/${group}`
+				const hints = { 'no channels': 'this mute group has no channels on a connected processor' }
+				const response =
+					options.mode === 'toggle'
+						? await send('toggle', target, undefined, hints)
+						: await send('set', target, { muted: options.mode === 'on' }, hints)
+				if (!response) return
+				self.applyResponse(target, response)
+				if (Array.isArray(response.failed) && response.failed.length) {
+					self.log('warn', `Mute group ${group}: did not reach ${response.failed.join(', ')}`)
+				}
 			},
 		},
 

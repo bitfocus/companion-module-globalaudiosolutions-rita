@@ -16,6 +16,8 @@ import {
 	DSP_PROPS,
 	ENGINE_COUNT,
 	ENGINE_PROPS,
+	MUTE_GROUP_COUNT,
+	MUTE_GROUP_PROPS,
 	SETTINGS_PROPS,
 	createEmptyState,
 	type RitaState,
@@ -59,6 +61,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 	// Older RiTA versions have no alignapf or average object: stop asking once they answer unknown target.
 	private alignApfSupported = true
 	private averageSupported = true
+	private muteGroupsSupported = true
 
 	constructor(internal: unknown) {
 		super(internal)
@@ -122,6 +125,8 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 			Object.assign((this.state.dsp[Number(match[1])] ??= {}), body)
 		} else if ((match = target.match(/^measurements\/(\d+)$/))) {
 			Object.assign((this.state.measurements[Number(match[1])] ??= {}), body)
+		} else if ((match = target.match(/^muteGroups\/(\d+)$/))) {
+			Object.assign((this.state.muteGroups[Number(match[1])] ??= {}), body)
 		} else if ((match = target.match(/^dsp\/out\/(\d+)\/alignapf\/(\d+)$/))) {
 			const channel = (this.state.alignApf[Number(match[1])] ??= {})
 			Object.assign((channel[Number(match[2])] ??= {}), body)
@@ -197,6 +202,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		this.eventsSupported = true
 		this.alignApfSupported = true
 		this.averageSupported = true
+		this.muteGroupsSupported = true
 		const targets: [string, string[] | undefined][] = [
 			['generator', undefined],
 			['settings', SETTINGS_PROPS],
@@ -207,11 +213,19 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		for (let i = 1; i <= CHANNEL_COUNT; i++) {
 			for (let k = 1; k <= ALIGN_APF_COUNT; k++) targets.push([`dsp/out/${i}/alignapf/${k}`, ALIGN_APF_PROPS])
 		}
+		for (let i = 1; i <= MUTE_GROUP_COUNT; i++) targets.push([`muteGroups/${i}`, MUTE_GROUP_PROPS])
 
 		for (const [target, properties] of targets) {
 			const isAlignApf = target.includes('/alignapf/')
 			const isAverage = target === 'average'
-			if ((isAlignApf && !this.alignApfSupported) || (isAverage && !this.averageSupported)) continue
+			const isMuteGroup = target.startsWith('muteGroups/')
+			if (
+				(isAlignApf && !this.alignApfSupported) ||
+				(isAverage && !this.averageSupported) ||
+				(isMuteGroup && !this.muteGroupsSupported)
+			) {
+				continue
+			}
 			try {
 				const response = await this.rita.send('subscribe', target, properties)
 				this.applyResponse(target, response?.state)
@@ -229,6 +243,11 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 				if (isAverage && err instanceof RitaError && err.code === 'unknown target') {
 					this.averageSupported = false
 					this.log('info', 'This RiTA has no average object')
+					continue
+				}
+				if (isMuteGroup && err instanceof RitaError && err.code === 'unknown target') {
+					this.muteGroupsSupported = false
+					this.log('info', 'This RiTA has no mute groups')
 					continue
 				}
 				this.log('warn', `Subscribe ${target}: ${(err as Error).message}`)
@@ -293,6 +312,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 			this.applyOverview(await read('measurements'))
 			await this.pollAlignApf()
 			await this.pollAverage()
+			await this.pollMuteGroups()
 
 			UpdateVariableValues(this)
 			this.checkAllFeedbacks()
@@ -318,6 +338,21 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		}
 		this.log('warn', `${label}: no result after 120 s`)
 		return undefined
+	}
+
+	private async pollMuteGroups(): Promise<void> {
+		if (!this.muteGroupsSupported) return
+		try {
+			const all = await this.rita.send('get', 'muteGroups')
+			if (!Array.isArray(all?.groups)) return
+			for (const group of all.groups) {
+				const index = Number(group.index)
+				if (index) Object.assign((this.state.muteGroups[index] ??= {}), group)
+			}
+		} catch (err) {
+			if (err instanceof RitaError && err.code === 'unknown target') this.muteGroupsSupported = false
+			else this.log('debug', `Poll muteGroups: ${(err as Error).message}`)
+		}
 	}
 
 	private async pollAverage(): Promise<void> {

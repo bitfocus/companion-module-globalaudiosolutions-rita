@@ -18,6 +18,7 @@ Requires a RiTA version whose API includes change events, the 20-filter EQ and L
 - **Measurement**: capture, activate engine, find delay, set delay, set inputs, rename, sync all, clear find, clear delays, clear everything, export all.
 - **Memory**: store the trace of an engine, show/hide, rename, delete.
 - **AVG**: on/off, export impulse.
+- **Mute group**: mute, unmute or toggle one of the 4 mute buttons of the external processor.
 - **DSP**: channel gain (absolute or step), delay, polarity, name, clear, EQ filter (1-20) and its on/off, alignment APF (1-2) and its on/off, high-pass and low-pass.
 - **Advanced: send API command**: any request with a JSON properties field, for objects not covered above.
 
@@ -38,6 +39,8 @@ When RiTA would have shown a message box, it answers anyway and puts the text in
 In the **crossovers** (high-pass and low-pass) the last number is not a Q: it is the passband ripple in dB on Chebyshev I and Eliptic, the stopband attenuation in dB on Chebyshev II, and Butterworth, Linkwitz-Riley and Bessel ignore it. It takes 0.1 to 120. The Q of the **EQ filters** is a real Q factor, 0.1 to 10.
 
 **Alignment APFs** are the 2 all-pass filters per channel that RiTA's Auto Align writes (it replaces both on every run), separate from the 20 EQ filters. They can also be set by hand: frequency, order (1 or 2) and Q. The module follows them, so buttons update after an Auto Align. Older RiTA versions do not have them.
+
+**Mute groups** are the 4 assignable mute buttons of the external processor (DAP0408F, GALAXY, Marani…). Which channels belong to each group is set in RiTA, not from here, and a group can mix channels of several processors. *Toggle* does what the button does: it unmutes the group when every channel is muted, and mutes it otherwise. Feedbacks: **Mute group is muted** (red) and **Mute group has channels**; the name given in RiTA is in `$(rita:mute_group_N_name)`, so it can be the button text. A group with no channels on a connected processor answers "no channels", and a channel the processor did not take is written to the log.
 
 **AVG** is RiTA's average of the **selected** engines (not the active ones). **AVG: on / off** is the same control as *Settings: averaging on/off*. **AVG: export impulse** writes the impulse response of the average to the Memory Bank folder, in the format chosen in RiTA; the export runs in the background and its result (or error, such as no export folder or AVG off) is written to the log.
 
@@ -63,13 +66,14 @@ The **Settings** variables follow RiTA and are never put back by the module: if 
 
 ### Feedbacks
 
-Connected, Sync All is set, Sync All is possible, AVG on, AVG has a curve, generator running, generator signal, engine active, engine selected, DSP polarity inverted, DSP alignment APF enabled.
+Connected, Mute group is muted, Mute group has channels, Sync All is set, Sync All is possible, AVG on, AVG has a curve, generator running, generator signal, engine active, engine selected, DSP polarity inverted, DSP alignment APF enabled.
 
 ### Variables
 
 - `$(rita:generator_running)`, `generator_signal`, `generator_gain`, `generator_duration`, `generator_output1`, `generator_output2`
 - `$(rita:settings_fft_size)`, `settings_window`, `settings_smoothing`, `settings_spectrum_averages`, `settings_averaging`, `settings_sum`, `settings_coherence_threshold`
 - `$(rita:sync_active)`, `sync_count`, `sync_possible`
+- `$(rita:mute_group_N_name)`, `mute_group_N_muted`, `mute_group_N_available` for N = 1..4
 - `$(rita:average_active)`, `average_has_data`, `average_count`, `average_engines`, `average_mode`, `average_name`
 - `$(rita:dsp_N_name)`, `dsp_N_gain`, `dsp_N_delay`, `dsp_N_polarity` for N = 1..8
 - `$(rita:dsp_N_apfK_enabled)`, `dsp_N_apfK_frequency`, `dsp_N_apfK_order`, `dsp_N_apfK_q` for N = 1..8 and K = 1..2

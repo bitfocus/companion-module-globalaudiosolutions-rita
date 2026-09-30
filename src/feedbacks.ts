@@ -1,7 +1,7 @@
 import { combineRgb, type CompanionFeedbackDefinitions } from '@companion-module/base'
 import type ModuleInstance from './index.js'
 import type { FeedbacksSchema } from './index.js'
-import { ALIGN_APF_CHOICES, CHANNEL_CHOICES, ENGINE_CHOICES, SIGNAL_CHOICES } from './choices.js'
+import { ALIGN_APF_CHOICES, CHANNEL_CHOICES, ENGINE_CHOICES, MUTE_GROUP_CHOICES, SIGNAL_CHOICES } from './choices.js'
 
 const GREEN = { bgcolor: combineRgb(0, 153, 51), color: combineRgb(255, 255, 255) }
 const RED = { bgcolor: combineRgb(204, 0, 0), color: combineRgb(255, 255, 255) }
@@ -21,6 +21,22 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			defaultStyle: GREEN,
 			options: [],
 			callback: () => self.state.generator.running === true,
+		},
+		mute_group_muted: {
+			type: 'boolean',
+			name: 'Mute group is muted',
+			description: 'Every channel of the group is muted on the processor, however it was muted',
+			defaultStyle: RED,
+			options: [{ type: 'dropdown', id: 'group', label: 'Mute group', default: '1', choices: MUTE_GROUP_CHOICES }],
+			callback: ({ options }) => self.state.muteGroups[Number(options.group)]?.muted === true,
+		},
+		mute_group_available: {
+			type: 'boolean',
+			name: 'Mute group has channels',
+			description: 'The group has channels on a connected processor, so its button does something',
+			defaultStyle: GREEN,
+			options: [{ type: 'dropdown', id: 'group', label: 'Mute group', default: '1', choices: MUTE_GROUP_CHOICES }],
+			callback: ({ options }) => self.state.muteGroups[Number(options.group)]?.available === true,
 		},
 		average_active: {
 			type: 'boolean',

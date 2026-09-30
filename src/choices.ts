@@ -10,6 +10,7 @@ const numbered = (count: number, prefix: string): Choice[] =>
 export const CHANNEL_CHOICES = numbered(8, 'Channel')
 export const ENGINE_CHOICES = numbered(8, 'Engine')
 export const ALIGN_APF_CHOICES = numbered(2, 'Alignment APF')
+export const MUTE_GROUP_CHOICES = numbered(4, 'Mute group')
 
 export const ON_OFF_TOGGLE_CHOICES: Choice[] = [
 	{ id: 'on', label: 'On' },
@@ -51,4 +52,4 @@ export const XOVER_TYPE_CHOICES = same([
 	'Chebyshev II',
 ])
 
-export const RAW_ACTION_CHOICES = same(['get', 'set', 'capture', 'delete', 'findDelay', 'clear', 'export', 'exportAll', 'syncAll', 'clearFind', 'clearDelays', 'clearAll', 'refresh'])
+export const RAW_ACTION_CHOICES = same(['get', 'set', 'capture', 'delete', 'findDelay', 'clear', 'export', 'exportAll', 'syncAll', 'clearFind', 'clearDelays', 'clearAll', 'toggle', 'refresh'])
