@@ -45,6 +45,8 @@ In the **crossovers** (high-pass and low-pass) the last number is not a Q: it is
 
 RiTA does not send events for the sync, so the module reads it with the level meters, at the poll interval: the feedback **Sync All is set** stays on while a sync is in place, **Sync All is possible** says whether any engine has a measurement, and a Sync All done from RiTA writes "Sync All done in RiTA" to the log.
 
+While a sync is in place, RiTA does nothing on a new Sync All (in RiTA the button is disabled): the module says so in the log. Put the feedback **Sync All is set** on the button to see it at a glance.
+
 **Measurement: clear find** removes the sync. **Measurement: clear delays** sets the DSP delay of the 8 channels to 0, and RiTA refuses it while a sync is in place: clear the find first. **Measurement: clear everything** is RiTA's Clear with Everything and with no dialog, so it wipes measurements, DSP and names of every channel.
 
 Each engine has two delays: `meas_N_delay` is the arrival of its measurement, and `meas_N_dsp_delay` is the delay of its DSP channel, which is what Sync All writes.

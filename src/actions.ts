@@ -383,11 +383,19 @@ export function UpdateActions(self: ModuleInstance): void {
 		measurement_sync_all: {
 			name: 'Measurement: sync all',
 			description:
-				"RiTA's Sync All (button and Y shortcut): aligns with each other the engines that already have a measurement. It does not touch AVG.",
+				"RiTA's Sync All (button and Y shortcut): aligns with each other the engines that already have a measurement. " +
+				'It does not touch AVG, and it does nothing while a sync is already in place: clear the find first.',
 			options: [],
 			callback: async () => {
+				const before = self.state.sync.syncCount
 				const response = await send('syncAll', 'measurements')
 				if (!Array.isArray(response?.measurements)) return
+				// With a sync already in place RiTA does nothing and answers the same syncCount.
+				if (response.synced === true && before !== undefined && response.syncCount === before) {
+					self.log('warn', 'Sync all: a sync is already in place, clear it first with Measurement: clear find')
+					self.applyOverview(response)
+					return
+				}
 				for (const m of response.measurements) {
 					self.applyResponse(`measurements/${m.index}`, {
 						name: m.name,
