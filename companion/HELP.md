@@ -2,7 +2,7 @@
 
 Controls RiTA through its WebSocket API (`ws://<ip>:26101/api/v1/`).
 
-Requires a RiTA version whose API includes change events, the 20-filter EQ and Live TF. With an older RiTA the module still connects, but some actions are rejected.
+Requires **RiTA 2.8.0 or later**. With an older RiTA the module still connects and most of it works, but whatever that version's API does not have (mute groups, the average, the alignment APFs, the clear actions, change events) is simply not there, and those actions are rejected.
 
 ### Configuration
 
@@ -30,7 +30,7 @@ When RiTA would have shown a message box, it answers anyway and puts the text in
 
 **Spectrum on/off** selects Spectrum if needed and measures it on the chosen engine; off stops it. It can run on several engines: deactivate one with **Measurement: activate engine**.
 
-**Live TF** is hidden in the RiTA beta: it is not in the signal list and the generator has no pink noise switch.
+**Live TF** is not offered by RiTA 2.8.0: it is not in the signal list and the generator has no pink noise switch.
 
 **Measurement: set inputs** sets the measurement input of that engine only. In 1 Ref. Channel mode the reference input goes to all eight engines.
 

@@ -4,11 +4,10 @@ Módulo de [Bitfocus Companion](https://bitfocus.io/companion) para controlar Ri
 
 La ayuda para el usuario de Companion está en [companion/HELP.md](companion/HELP.md).
 
-## Estado
+## Requisitos
 
-La API de RiTA sigue en borrador (ver `RiTA_Matlab/sdk/README.md`). El módulo sigue `sdk/referencia.md` y, para la contraseña, el objeto `session` (`set session {"password": ...}`), que existe en el servidor pero aún no aparece en la referencia de la SDK.
-
-Hecho con `@companion-module/base` 2.x: necesita Companion 4.3 o posterior.
+- **RiTA 2.8.0 o posterior**, con la API arrancada. El módulo sigue `sdk/referencia.md` de RiTA.
+- **Companion 4.3 o posterior**, porque está hecho con `@companion-module/base` 2.x.
 
 ## Instalar en Companion
 
@@ -33,7 +32,7 @@ Deja `globalaudiosolutions-rita-<versión>.tgz` en esta carpeta. La versión sal
 Sin RiTA a mano, se puede levantar el servidor de pruebas en MATLAB:
 
 ```matlab
-addpath('<ruta>\RiTA_Matlab\software\api')
+addpath(genpath('<ruta>\RiTA_Matlab\software'))
 rapiStreamDemo(26101, 3600)
 ```
 
