@@ -14,6 +14,7 @@ import {
 	AVERAGE_PROPS,
 	CHANNEL_COUNT,
 	DSP_PROPS,
+	DSP_TYPE_PROP,
 	ENGINE_COUNT,
 	ENGINE_PROPS,
 	MUTE_GROUP_COUNT,
@@ -62,6 +63,9 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 	private alignApfSupported = true
 	private averageSupported = true
 	private muteGroupsSupported = true
+	// DSP Type arrived after RiTA 2.8.0: 'unknown' until this RiTA has been asked, and asked again
+	// on the slow resync when the answer was not a plain "this version does not have it".
+	private dspType: 'unknown' | 'supported' | 'absent' = 'unknown'
 
 	constructor(internal: unknown) {
 		super(internal)
@@ -92,6 +96,37 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		return GetConfigFields()
 	}
 
+	/** settings properties this RiTA actually has: naming one it does not fails the whole get. */
+	private settingsProps(): string[] {
+		return this.dspType === 'supported' ? [...SETTINGS_PROPS, DSP_TYPE_PROP] : SETTINGS_PROPS
+	}
+
+	/** Asked for on its own, so a RiTA without it does not take the other settings down with it. */
+	private async probeDspType(): Promise<void> {
+		try {
+			const response = await this.rita.send('get', 'settings', [DSP_TYPE_PROP])
+			if (typeof response?.dspType === 'string') {
+				this.dspType = 'supported'
+				this.applyResponse('settings', response)
+			}
+		} catch (err) {
+			if (err instanceof RitaError && err.code === 'unknown property') {
+				this.dspType = 'absent'
+				this.log('info', 'This RiTA has no DSP Type: Settings: DSP type is refused')
+			} else {
+				this.log('debug', `Probe dspType: ${(err as Error).message}`)
+			}
+		}
+	}
+
+	/** A DSP Type change converts the filters of the eight channels, so what was read is stale. */
+	private async rereadDspAfterTypeChange(): Promise<void> {
+		for (let i = 1; i <= CHANNEL_COUNT; i++) await this.refresh(`dsp/out/${i}`, DSP_PROPS)
+		await this.pollAlignApf()
+		UpdateVariableValues(this)
+		this.checkAllFeedbacks()
+	}
+
 	onConnected(): void {
 		this.checkFeedbacks('connected')
 		void this.logApiVersion()
@@ -118,7 +153,17 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		if (target === 'generator') {
 			Object.assign(this.state.generator, body)
 		} else if (target === 'settings') {
+			const previousDspType = this.state.settings.dspType
 			Object.assign(this.state.settings, body)
+			const dspType = this.state.settings.dspType
+			if (previousDspType !== undefined && dspType !== undefined && dspType !== previousDspType) {
+				this.log(
+					'info',
+					`DSP Type is now ${dspType}: the Q of the bells and the shelvings and the frequency of the Bessel cuts ` +
+						'are now the numbers of that model, reading the channels again',
+				)
+				void this.rereadDspAfterTypeChange()
+			}
 		} else if (target === 'average') {
 			Object.assign(this.state.average, body)
 		} else if ((match = target.match(/^dsp\/out\/(\d+)$/))) {
@@ -185,6 +230,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		this.stopPolling()
 		this.rita?.destroy()
 		this.eventsSupported = false
+		this.dspType = 'unknown'
 		this.state = createEmptyState()
 		UpdateVariableValues(this)
 		this.rita = new RitaClient(this)
@@ -193,6 +239,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 
 	private async startSync(): Promise<void> {
 		const client = this.rita
+		await this.probeDspType()
 		await this.subscribeAll()
 		await this.poll()
 		if (client === this.rita && client.connected) this.startPolling()
@@ -205,7 +252,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		this.muteGroupsSupported = true
 		const targets: [string, string[] | undefined][] = [
 			['generator', undefined],
-			['settings', SETTINGS_PROPS],
+			['settings', this.settingsProps()],
 			['average', AVERAGE_PROPS],
 		]
 		for (let i = 1; i <= CHANNEL_COUNT; i++) targets.push([`dsp/out/${i}`, DSP_PROPS])
@@ -298,7 +345,8 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 
 			const generator = await read('generator')
 			if (generator) this.state.generator = generator
-			this.applyResponse('settings', await read('settings', SETTINGS_PROPS))
+			if (this.dspType === 'unknown') await this.probeDspType()
+			this.applyResponse('settings', await read('settings', this.settingsProps()))
 
 			// A bare get of dsp/out/N also dumps its filters and FIRs.
 			for (let i = 1; i <= CHANNEL_COUNT; i++) {

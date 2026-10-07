@@ -6,6 +6,7 @@ import { AVERAGE_PROPS, DSP_PROPS, ENGINE_PROPS } from './state.js'
 import {
 	ALIGN_APF_CHOICES,
 	CHANNEL_CHOICES,
+	DSP_TYPE_CHOICES,
 	DURATION_CHOICES,
 	MUTE_GROUP_CHOICES,
 	ENGINE_CHOICES,
@@ -25,6 +26,12 @@ import {
 // RiTA refuses these while a find holds a delay that would not fit the new window.
 const FIND_HINT = {
 	'unknown value': 'RiTA refused the value; if a find is in place, clear it first with Measurement: clear find',
+}
+
+// DSP Type reached the API after RiTA 2.8.0, and the list of processors can grow.
+const DSP_TYPE_HINT = {
+	'unknown property': 'This RiTA has no DSP Type (Preferences > DSP): it needs a newer version',
+	'unknown value': 'RiTA does not know that DSP type; this one has RiTA, Kingray, Marani and Galaxy',
 }
 
 function resolveBool(mode: unknown, current: boolean | undefined): boolean {
@@ -223,6 +230,27 @@ export function UpdateActions(self: ModuleInstance): void {
 			},
 		},
 
+		settings_dsp_type: {
+			name: 'Settings: DSP type',
+			description:
+				'The DSP Type of Preferences > DSP: the filter model RiTA draws and computes its DSP with, its own or the one ' +
+				'of a processor. RiTA converts the filters of the eight channels so the curves do not change, which moves the Q ' +
+				'of the bells and the shelvings and the frequency of the Bessel cuts. Needs a RiTA newer than 2.8.0.',
+			options: [
+				{
+					type: 'dropdown',
+					id: 'value',
+					label: 'DSP type',
+					default: 'RiTA',
+					choices: DSP_TYPE_CHOICES,
+					allowCustom: true,
+					tooltip: 'A newer RiTA may know more processors: type the name in',
+				},
+			],
+			callback: async ({ options }) => {
+				await send('set', 'settings', { dspType: options.value }, DSP_TYPE_HINT)
+			},
+		},
 		settings_fft_size: {
 			name: 'Settings: FFT size',
 			options: [{ type: 'dropdown', id: 'value', label: 'FFT size', default: '16384', choices: FFT_SIZE_CHOICES }],

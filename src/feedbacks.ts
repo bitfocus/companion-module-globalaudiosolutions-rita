@@ -1,7 +1,14 @@
 import { combineRgb, type CompanionFeedbackDefinitions } from '@companion-module/base'
 import type ModuleInstance from './index.js'
 import type { FeedbacksSchema } from './index.js'
-import { ALIGN_APF_CHOICES, CHANNEL_CHOICES, ENGINE_CHOICES, MUTE_GROUP_CHOICES, SIGNAL_CHOICES } from './choices.js'
+import {
+	ALIGN_APF_CHOICES,
+	CHANNEL_CHOICES,
+	DSP_TYPE_CHOICES,
+	ENGINE_CHOICES,
+	MUTE_GROUP_CHOICES,
+	SIGNAL_CHOICES,
+} from './choices.js'
 
 const GREEN = { bgcolor: combineRgb(0, 153, 51), color: combineRgb(255, 255, 255) }
 const RED = { bgcolor: combineRgb(204, 0, 0), color: combineRgb(255, 255, 255) }
@@ -59,6 +66,23 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			defaultStyle: GREEN,
 			options: [{ type: 'dropdown', id: 'signal', label: 'Signal', default: 'Pink', choices: SIGNAL_CHOICES }],
 			callback: ({ options }) => self.state.generator.signal === options.signal,
+		},
+		settings_dsp_type: {
+			type: 'boolean',
+			name: 'DSP type is',
+			description: 'The filter model of Preferences > DSP. Empty on a RiTA that does not have it',
+			defaultStyle: GREEN,
+			options: [
+				{
+					type: 'dropdown',
+					id: 'value',
+					label: 'DSP type',
+					default: 'RiTA',
+					choices: DSP_TYPE_CHOICES,
+					allowCustom: true,
+				},
+			],
+			callback: ({ options }) => self.state.settings.dspType === options.value,
 		},
 		sync_active: {
 			type: 'boolean',

@@ -14,7 +14,7 @@ Requires **RiTA 2.8.0 or later**. With an older RiTA the module still connects a
 ### Actions
 
 - **Generator**: Spectrum on/off, signal, gain, duration, outputs.
-- **Settings**: FFT size, window, smoothing, spectrum averages, averaging, sum, plot style, coherence threshold.
+- **Settings**: FFT size, window, smoothing, spectrum averages, averaging, sum, plot style, coherence threshold, DSP type.
 - **Measurement**: capture, activate engine, find delay, set delay, set inputs, rename, sync all, clear find, clear delays, clear everything, export all.
 - **Memory**: store the trace of an engine, show/hide, rename, delete.
 - **AVG**: on/off, export impulse.
@@ -36,7 +36,11 @@ When RiTA would have shown a message box, it answers anyway and puts the text in
 
 **EQ filters** start disabled in RiTA: a filter that is not enabled is stored but does not sound. Gain applies to Parametric and the shelving types, order to APF and FIR RevPhase.
 
-In the **crossovers** (high-pass and low-pass) the last number is not a Q: it is the passband ripple in dB on Chebyshev I and Eliptic, the stopband attenuation in dB on Chebyshev II, and Butterworth, Linkwitz-Riley and Bessel ignore it. It takes 0.1 to 120. The Q of the **EQ filters** is a real Q factor, 0.1 to 10.
+In the **crossovers** (high-pass and low-pass) the last number is not a Q: it is the passband ripple in dB on Chebyshev I and Eliptic, the stopband attenuation in dB on Chebyshev II, and Butterworth, Linkwitz-Riley and Bessel ignore it. It takes 0.1 to 120. The Q of the **EQ filters** is a real Q factor, 0.1 to 10. Both are numbers of RiTA's own filter model: with another **DSP type** they become that processor's numbers, the ones its own screen shows.
+
+**DSP type** is the *DSP Type* of RiTA's Preferences > DSP: the filter model RiTA draws and computes its DSP with, its own or the one of an external processor (Kingray, Marani, Galaxy). Changing it makes RiTA convert the filters of the eight channels so the curves do not change, which moves the numbers: the Q of the Parametric and shelving filters and the frequency of the Bessel crossovers (a +12 dB bell with Q 2 becomes Q 3.99 in Kingray). The module writes that to the log and reads the channels again, and it does the same when the type is changed in RiTA itself. Anything read before the change is a number of the old model.
+
+DSP type reached the API after RiTA 2.8.0. On an older RiTA the action is refused with "This RiTA has no DSP Type" and `$(rita:settings_dsp_type)` stays empty; everything else works as usual. The dropdown also takes a typed name, for a newer RiTA that knows more processors.
 
 **Alignment APFs** are the 2 all-pass filters per channel that RiTA's Auto Align writes (it replaces both on every run), separate from the 20 EQ filters. They can also be set by hand: frequency, order (1 or 2) and Q. The module follows them, so buttons update after an Auto Align. Older RiTA versions do not have them.
 
@@ -66,12 +70,12 @@ The **Settings** variables follow RiTA and are never put back by the module: if 
 
 ### Feedbacks
 
-Connected, Mute group is muted, Mute group has channels, Sync All is set, Sync All is possible, AVG on, AVG has a curve, generator running, generator signal, engine active, engine selected, DSP polarity inverted, DSP alignment APF enabled.
+Connected, Mute group is muted, Mute group has channels, Sync All is set, Sync All is possible, AVG on, AVG has a curve, generator running, generator signal, engine active, engine selected, DSP type is, DSP polarity inverted, DSP alignment APF enabled.
 
 ### Variables
 
 - `$(rita:generator_running)`, `generator_signal`, `generator_gain`, `generator_duration`, `generator_output1`, `generator_output2`
-- `$(rita:settings_fft_size)`, `settings_window`, `settings_smoothing`, `settings_spectrum_averages`, `settings_averaging`, `settings_sum`, `settings_coherence_threshold`
+- `$(rita:settings_fft_size)`, `settings_window`, `settings_smoothing`, `settings_spectrum_averages`, `settings_averaging`, `settings_sum`, `settings_coherence_threshold`, `settings_dsp_type`
 - `$(rita:sync_active)`, `sync_count`, `sync_possible`
 - `$(rita:mute_group_N_name)`, `mute_group_N_muted`, `mute_group_N_available` for N = 1..4
 - `$(rita:average_active)`, `average_has_data`, `average_count`, `average_engines`, `average_mode`, `average_name`

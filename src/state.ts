@@ -41,6 +41,7 @@ export interface AverageState {
 }
 
 export interface SettingsState {
+	dspType?: string
 	fftSize?: string
 	window?: string
 	smoothing?: string
@@ -84,6 +85,12 @@ export const DSP_PROPS = ['name', 'gain', 'delay', 'polarity']
 export const ENGINE_PROPS = ['name', 'active', 'selected', 'delay', 'level']
 export const ALIGN_APF_PROPS = ['enabled', 'frequency', 'order', 'q']
 export const AVERAGE_PROPS = ['active', 'count', 'hasData', 'engines', 'mode', 'name']
+// The DSP Type of Preferences > DSP, added to the API after RiTA 2.8.0. It is deliberately
+// NOT in SETTINGS_PROPS: a get that names a property its RiTA does not have fails the whole
+// request with "unknown property", which would leave every settings variable empty. It is
+// asked for on its own and only added to the list once RiTA has answered it.
+export const DSP_TYPE_PROP = 'dspType'
+
 // RiTA changes fftSize on its own when Live TF starts with smoothing on, so it is followed, never restored.
 export const SETTINGS_PROPS = [
 	'fftSize',

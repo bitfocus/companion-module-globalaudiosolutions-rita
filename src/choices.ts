@@ -37,6 +37,9 @@ export const WINDOW_CHOICES = same([
 export const SMOOTHING_CHOICES = same(['None', '1/48 Oct', '1/24 Oct', '1/12 Oct', '1/6 Oct', '1/3 Oct'])
 export const SPECTRUM_AVERAGES_CHOICES = same(['1', '2', '4', '8', '16', '32'])
 export const SPECTRUM_PLOT_CHOICES = same(['Line', 'Bar'])
+// The filter model RiTA draws and computes the DSP with, in the order of its dropdown.
+// Newer RiTA versions may add processors, so the dropdowns that use it allow a typed value.
+export const DSP_TYPE_CHOICES = same(['RiTA', 'Kingray', 'Marani', 'Galaxy'])
 
 export const PEQ_TYPE_CHOICES = same(['Parametric', 'Low Shelf', 'High Shelf', 'APF', 'FIR RevPhase'])
 // The G/O column of the EQ window is a gain on these types and an order on the rest.
