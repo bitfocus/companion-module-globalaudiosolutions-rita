@@ -369,12 +369,16 @@ export function UpdateActions(self: ModuleInstance): void {
 		},
 		measurement_active: {
 			name: 'Measurement: activate engine',
+			description:
+				'In 1 Meas. Channel mode RiTA turns the other engines off when one is turned on, except with the Spectrum ' +
+				'signal, and the module writes to the log which ones it turned off.',
 			options: [engineOption, modeOption],
 			callback: async ({ options }) => {
 				const engine = Number(options.engine)
 				const response = await send('set', `measurements/${engine}`, {
 					active: resolveBool(options.mode, self.state.measurements[engine]?.active),
 				})
+				if (response?.note) self.log('info', `Engine ${engine}: ${response.note}`)
 				if (response) await self.refreshEngines()
 			},
 		},
