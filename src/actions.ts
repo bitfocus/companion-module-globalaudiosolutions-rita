@@ -100,6 +100,14 @@ const slotOption = {
 export function UpdateActions(self: ModuleInstance): void {
 	// Errors from RiTA (busy, unknown value, ...) are logged instead of thrown into Companion.
 	// hints: a friendlier text for a given RiTA error code, instead of the bare code.
+	// RiTA puts in note what it changed beyond what was asked: a channel shared by the eight
+	// engines, the engines it turned off. Several of them come joined with '; '.
+	const logNote = (target: string | undefined, response: any): void => {
+		if (typeof response?.note !== 'string' || !response.note) return
+		const engine = target?.match(/^measurements\/(\d+)$/)
+		self.log('info', `${engine ? `Engine ${engine[1]}` : (target ?? 'RiTA')}: ${response.note}`)
+	}
+
 	const send = async (
 		action: RitaAction,
 		target?: string,
@@ -110,6 +118,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			const response = await self.rita.send(action, target, properties)
 			if (action === 'set' || action === 'findDelay') self.applyResponse(target, response)
 			self.logNotices(response)
+			logNote(target, response)
 			return response
 		} catch (err) {
 			if (err instanceof RitaError && hints?.[err.code]) {
@@ -378,7 +387,6 @@ export function UpdateActions(self: ModuleInstance): void {
 				const response = await send('set', `measurements/${engine}`, {
 					active: resolveBool(options.mode, self.state.measurements[engine]?.active),
 				})
-				if (response?.note) self.log('info', `Engine ${engine}: ${response.note}`)
 				if (response) await self.refreshEngines()
 			},
 		},
@@ -422,11 +430,10 @@ export function UpdateActions(self: ModuleInstance): void {
 				{ type: 'number', id: 'referenceInput', label: 'Reference input', default: 2, min: 1, max: 64, asInteger: true },
 			],
 			callback: async ({ options }) => {
-				const response = await send('set', `measurements/${options.engine}`, {
+				await send('set', `measurements/${options.engine}`, {
 					measurementInput: Number(options.measurementInput),
 					referenceInput: Number(options.referenceInput),
 				})
-				if (response?.note) self.log('info', `Engine ${options.engine} inputs: ${response.note}`)
 			},
 		},
 		measurement_name: {
