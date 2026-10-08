@@ -251,7 +251,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			description:
 				'The DSP Type of Preferences > DSP: the filter model RiTA draws and computes its DSP with, its own or the one ' +
 				'of a processor. RiTA converts the filters of the eight channels so the curves do not change, which moves the Q ' +
-				'of the bells and the shelvings and the frequency of the Bessel cuts. Needs a RiTA newer than 2.8.0.',
+				'of the bells and the shelvings and the frequency of the Bessel cuts. Needs RiTA 2.8.0 or later.',
 			options: [
 				{
 					type: 'dropdown',
@@ -271,7 +271,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Settings: reference mode',
 			description:
 				'The reference channel mode of Preferences. With 1 Ref. Channel the eight engines share the reference input, ' +
-				'so setting it on one engine sets it on all of them. Needs a RiTA newer than 2.8.0.',
+				'so setting it on one engine sets it on all of them. Needs RiTA 2.8.0 or later.',
 			options: [
 				{
 					type: 'dropdown',
@@ -290,7 +290,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			description:
 				'The measurement channel mode of Preferences. With 1 Meas. Channel the eight engines share the measurement ' +
 				'input and turning one engine on turns the others off. RiTA also puts itself in that mode when a two-input ' +
-				'sound card is chosen. Needs a RiTA newer than 2.8.0.',
+				'sound card is chosen. Needs RiTA 2.8.0 or later.',
 			options: [
 				{
 					type: 'dropdown',
