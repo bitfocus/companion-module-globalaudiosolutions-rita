@@ -14,8 +14,9 @@ import {
 	AVERAGE_PROPS,
 	CHANNEL_COUNT,
 	DSP_PROPS,
-	DSP_TYPE_PROP,
 	ENGINE_COUNT,
+	OPTIONAL_SETTINGS_LABELS,
+	OPTIONAL_SETTINGS_PROPS,
 	ENGINE_PROPS,
 	MUTE_GROUP_COUNT,
 	MUTE_GROUP_PROPS,
@@ -63,9 +64,9 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 	private alignApfSupported = true
 	private averageSupported = true
 	private muteGroupsSupported = true
-	// DSP Type arrived after RiTA 2.8.0: 'unknown' until this RiTA has been asked, and asked again
-	// on the slow resync when the answer was not a plain "this version does not have it".
-	private dspType: 'unknown' | 'supported' | 'absent' = 'unknown'
+	// The Preferences settings that arrived after RiTA 2.8.0: no entry until this RiTA has answered
+	// for that property, so one that failed for another reason is asked again on the slow resync.
+	private optional = new Map<string, 'supported' | 'absent'>()
 
 	constructor(internal: unknown) {
 		super(internal)
@@ -98,23 +99,28 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 
 	/** settings properties this RiTA actually has: naming one it does not fails the whole get. */
 	private settingsProps(): string[] {
-		return this.dspType === 'supported' ? [...SETTINGS_PROPS, DSP_TYPE_PROP] : SETTINGS_PROPS
+		const extra = OPTIONAL_SETTINGS_PROPS.filter((prop) => this.optional.get(prop) === 'supported')
+		return extra.length ? [...SETTINGS_PROPS, ...extra] : SETTINGS_PROPS
 	}
 
-	/** Asked for on its own, so a RiTA without it does not take the other settings down with it. */
-	private async probeDspType(): Promise<void> {
-		try {
-			const response = await this.rita.send('get', 'settings', [DSP_TYPE_PROP])
-			if (typeof response?.dspType === 'string') {
-				this.dspType = 'supported'
-				this.applyResponse('settings', response)
-			}
-		} catch (err) {
-			if (err instanceof RitaError && err.code === 'unknown property') {
-				this.dspType = 'absent'
-				this.log('info', 'This RiTA has no DSP Type: Settings: DSP type is refused')
-			} else {
-				this.log('debug', `Probe dspType: ${(err as Error).message}`)
+	/** Each one on its own, so a RiTA without it does not take the other settings down with it. */
+	private async probeOptionalSettings(): Promise<void> {
+		for (const prop of OPTIONAL_SETTINGS_PROPS) {
+			if (this.optional.has(prop)) continue
+			try {
+				const response = await this.rita.send('get', 'settings', [prop])
+				if (response?.[prop] !== undefined) {
+					this.optional.set(prop, 'supported')
+					this.applyResponse('settings', response)
+				}
+			} catch (err) {
+				const label = OPTIONAL_SETTINGS_LABELS[prop] ?? prop
+				if (err instanceof RitaError && err.code === 'unknown property') {
+					this.optional.set(prop, 'absent')
+					this.log('info', `This RiTA has no ${label} in Preferences: the action that sets it is refused`)
+				} else {
+					this.log('debug', `Probe ${prop}: ${(err as Error).message}`)
+				}
 			}
 		}
 	}
@@ -230,7 +236,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		this.stopPolling()
 		this.rita?.destroy()
 		this.eventsSupported = false
-		this.dspType = 'unknown'
+		this.optional = new Map()
 		this.state = createEmptyState()
 		UpdateVariableValues(this)
 		this.rita = new RitaClient(this)
@@ -239,7 +245,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 
 	private async startSync(): Promise<void> {
 		const client = this.rita
-		await this.probeDspType()
+		await this.probeOptionalSettings()
 		await this.subscribeAll()
 		await this.poll()
 		if (client === this.rita && client.connected) this.startPolling()
@@ -345,7 +351,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 
 			const generator = await read('generator')
 			if (generator) this.state.generator = generator
-			if (this.dspType === 'unknown') await this.probeDspType()
+			await this.probeOptionalSettings()
 			this.applyResponse('settings', await read('settings', this.settingsProps()))
 
 			// A bare get of dsp/out/N also dumps its filters and FIRs.

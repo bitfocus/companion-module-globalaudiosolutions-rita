@@ -11,10 +11,12 @@ import {
 	MUTE_GROUP_CHOICES,
 	ENGINE_CHOICES,
 	FFT_SIZE_CHOICES,
+	MEASUREMENT_MODE_CHOICES,
 	ON_OFF_TOGGLE_CHOICES,
 	PEQ_GAIN_TYPES,
 	PEQ_TYPE_CHOICES,
 	RAW_ACTION_CHOICES,
+	REFERENCE_MODE_CHOICES,
 	SIGNAL_CHOICES,
 	SMOOTHING_CHOICES,
 	SPECTRUM_AVERAGES_CHOICES,
@@ -32,6 +34,11 @@ const FIND_HINT = {
 const DSP_TYPE_HINT = {
 	'unknown property': 'This RiTA has no DSP Type (Preferences > DSP): it needs a newer version',
 	'unknown value': 'RiTA does not know that DSP type; this one has RiTA, Kingray, Marani and Galaxy',
+}
+
+// The two Preferences modes also reached the API after RiTA 2.8.0.
+const MODE_HINT = {
+	'unknown property': 'This RiTA does not have that mode in Preferences: it needs a newer version',
 }
 
 function resolveBool(mode: unknown, current: boolean | undefined): boolean {
@@ -249,6 +256,46 @@ export function UpdateActions(self: ModuleInstance): void {
 			],
 			callback: async ({ options }) => {
 				await send('set', 'settings', { dspType: options.value }, DSP_TYPE_HINT)
+			},
+		},
+		settings_reference_mode: {
+			name: 'Settings: reference mode',
+			description:
+				'The reference channel mode of Preferences. With 1 Ref. Channel the eight engines share the reference input, ' +
+				'so setting it on one engine sets it on all of them. Needs a RiTA newer than 2.8.0.',
+			options: [
+				{
+					type: 'dropdown',
+					id: 'value',
+					label: 'Reference mode',
+					default: '1 Ref. Channel',
+					choices: REFERENCE_MODE_CHOICES,
+				},
+			],
+			callback: async ({ options }) => {
+				await send('set', 'settings', { referenceMode: options.value }, MODE_HINT)
+			},
+		},
+		settings_measurement_mode: {
+			name: 'Settings: measurement mode',
+			description:
+				'The measurement channel mode of Preferences. With 1 Meas. Channel the eight engines share the measurement ' +
+				'input and turning one engine on turns the others off. RiTA also puts itself in that mode when a two-input ' +
+				'sound card is chosen. Needs a RiTA newer than 2.8.0.',
+			options: [
+				{
+					type: 'dropdown',
+					id: 'value',
+					label: 'Measurement mode',
+					default: '1 Meas. Channel',
+					choices: MEASUREMENT_MODE_CHOICES,
+				},
+			],
+			callback: async ({ options }) => {
+				// With one measurement channel RiTA leaves a single engine on, so the buttons have to be read again.
+				if (await send('set', 'settings', { measurementMode: options.value }, MODE_HINT)) {
+					await self.refreshEngines()
+				}
 			},
 		},
 		settings_fft_size: {

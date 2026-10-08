@@ -14,7 +14,7 @@ Requires **RiTA 2.8.0 or later**. With an older RiTA the module still connects a
 ### Actions
 
 - **Generator**: Spectrum on/off, signal, gain, duration, outputs.
-- **Settings**: FFT size, window, smoothing, spectrum averages, averaging, sum, plot style, coherence threshold, DSP type.
+- **Settings**: FFT size, window, smoothing, spectrum averages, averaging, sum, plot style, coherence threshold, DSP type, reference mode, measurement mode.
 - **Measurement**: capture, activate engine, find delay, set delay, set inputs, rename, sync all, clear find, clear delays, clear everything, export all.
 - **Memory**: store the trace of an engine, show/hide, rename, delete.
 - **AVG**: on/off, export impulse.
@@ -32,7 +32,9 @@ When RiTA would have shown a message box, it answers anyway and puts the text in
 
 **Live TF** is not offered by RiTA 2.8.0: it is not in the signal list and the generator has no pink noise switch.
 
-**Measurement: set inputs** sets the measurement input of that engine only. In 1 Ref. Channel mode the reference input goes to all eight engines.
+**Measurement: set inputs** sets the inputs of that engine. In **1 Ref. Channel** mode the reference input goes to all eight engines, and in **1 Meas. Channel** mode so does the measurement input: RiTA says which in its reply and the module writes it to the log.
+
+**Reference mode** and **measurement mode** are the two channel modes of RiTA's Preferences. With *Several*, each engine has its own input. With **1 Ref. Channel** or **1 Meas. Channel** the eight engines share that input, so writing it on one engine writes it on all of them. RiTA puts itself in 1 Meas. Channel when a two-input sound card is chosen, and in that mode it measures one engine at a time, so the module reads the eight engines again after changing it. Both modes reached the API after RiTA 2.8.0: on an older one the two actions are refused and the variables stay empty.
 
 **EQ filters** start disabled in RiTA: a filter that is not enabled is stored but does not sound. Gain applies to Parametric and the shelving types, order to APF and FIR RevPhase.
 
@@ -70,12 +72,12 @@ The **Settings** variables follow RiTA and are never put back by the module: if 
 
 ### Feedbacks
 
-Connected, Mute group is muted, Mute group has channels, Sync All is set, Sync All is possible, AVG on, AVG has a curve, generator running, generator signal, engine active, engine selected, DSP type is, DSP polarity inverted, DSP alignment APF enabled.
+Connected, Mute group is muted, Mute group has channels, Sync All is set, Sync All is possible, AVG on, AVG has a curve, generator running, generator signal, engine active, engine selected, DSP type is, Reference mode is, Measurement mode is, DSP polarity inverted, DSP alignment APF enabled.
 
 ### Variables
 
 - `$(rita:generator_running)`, `generator_signal`, `generator_gain`, `generator_duration`, `generator_output1`, `generator_output2`
-- `$(rita:settings_fft_size)`, `settings_window`, `settings_smoothing`, `settings_spectrum_averages`, `settings_averaging`, `settings_sum`, `settings_coherence_threshold`, `settings_dsp_type`
+- `$(rita:settings_fft_size)`, `settings_window`, `settings_smoothing`, `settings_spectrum_averages`, `settings_averaging`, `settings_sum`, `settings_coherence_threshold`, `settings_dsp_type`, `settings_reference_mode`, `settings_measurement_mode`
 - `$(rita:sync_active)`, `sync_count`, `sync_possible`
 - `$(rita:mute_group_N_name)`, `mute_group_N_muted`, `mute_group_N_available` for N = 1..4
 - `$(rita:average_active)`, `average_has_data`, `average_count`, `average_engines`, `average_mode`, `average_name`

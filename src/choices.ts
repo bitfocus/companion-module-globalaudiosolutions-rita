@@ -40,6 +40,9 @@ export const SPECTRUM_PLOT_CHOICES = same(['Line', 'Bar'])
 // The filter model RiTA draws and computes the DSP with, in the order of its dropdown.
 // Newer RiTA versions may add processors, so the dropdowns that use it allow a typed value.
 export const DSP_TYPE_CHOICES = same(['RiTA', 'Kingray', 'Marani', 'Galaxy'])
+// The two Preferences modes: with one channel the eight engines share that input.
+export const REFERENCE_MODE_CHOICES = same(['1 Ref. Channel', 'Several Ref. Channels'])
+export const MEASUREMENT_MODE_CHOICES = same(['1 Meas. Channel', 'Several Meas. Channels'])
 
 export const PEQ_TYPE_CHOICES = same(['Parametric', 'Low Shelf', 'High Shelf', 'APF', 'FIR RevPhase'])
 // The G/O column of the EQ window is a gain on these types and an order on the rest.

@@ -6,7 +6,9 @@ import {
 	CHANNEL_CHOICES,
 	DSP_TYPE_CHOICES,
 	ENGINE_CHOICES,
+	MEASUREMENT_MODE_CHOICES,
 	MUTE_GROUP_CHOICES,
+	REFERENCE_MODE_CHOICES,
 	SIGNAL_CHOICES,
 } from './choices.js'
 
@@ -83,6 +85,38 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				},
 			],
 			callback: ({ options }) => self.state.settings.dspType === options.value,
+		},
+		settings_reference_mode: {
+			type: 'boolean',
+			name: 'Reference mode is',
+			description: 'The reference channel mode of Preferences. Empty on a RiTA that does not have it',
+			defaultStyle: GREEN,
+			options: [
+				{
+					type: 'dropdown',
+					id: 'value',
+					label: 'Reference mode',
+					default: '1 Ref. Channel',
+					choices: REFERENCE_MODE_CHOICES,
+				},
+			],
+			callback: ({ options }) => self.state.settings.referenceMode === options.value,
+		},
+		settings_measurement_mode: {
+			type: 'boolean',
+			name: 'Measurement mode is',
+			description: 'The measurement channel mode of Preferences. Empty on a RiTA that does not have it',
+			defaultStyle: GREEN,
+			options: [
+				{
+					type: 'dropdown',
+					id: 'value',
+					label: 'Measurement mode',
+					default: '1 Meas. Channel',
+					choices: MEASUREMENT_MODE_CHOICES,
+				},
+			],
+			callback: ({ options }) => self.state.settings.measurementMode === options.value,
 		},
 		sync_active: {
 			type: 'boolean',
