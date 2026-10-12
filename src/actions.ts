@@ -131,6 +131,20 @@ export function UpdateActions(self: ModuleInstance): void {
 				return undefined
 			}
 			if (err instanceof RitaError && err.code === 'read only' && target?.startsWith('dsp/out/')) {
+				// Since RiTA 2.8.1 each channel has a number of bands in use (the Bands dropdown of the
+				// Equalizer window): a filter above it cannot be switched on, and RiTA answers the same
+				// code as a linked channel. The band count cannot be read, so both causes are named.
+				const slot = target.match(/^dsp\/out\/\d+\/peq\/(\d+)$/)
+				const props = properties as Record<string, unknown> | undefined
+				// Only switching a filter ON hits the band limit; switching it off never does.
+				if (slot && props && typeof props === 'object' && props.enabled === true) {
+					self.log(
+						'warn',
+						`${target}: filter ${slot[1]} could not be switched. Either it is above the bands in use for that ` +
+							'channel in RiTA (Equalizer window, Bands), or the EQ of the channel is linked to another one',
+					)
+					return undefined
+				}
 				self.log('warn', `${target}: read only, this part of the channel is linked to another one in RiTA`)
 				return undefined
 			}
