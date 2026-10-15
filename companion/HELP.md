@@ -14,7 +14,7 @@ Requires **RiTA 2.8.0 or later**. With an older RiTA the module still connects a
 ### Actions
 
 - **Generator**: Spectrum on/off, signal, gain, duration, outputs.
-- **Settings**: FFT size, window, smoothing, spectrum averages, averaging, sum, plot style, coherence threshold, DSP type, reference mode, measurement mode.
+- **Settings**: FFT size, window, smoothing, spectrum averages, averaging, sum, plot style, coherence threshold, DSP type, DSP model, DSP mode, reference mode, measurement mode.
 - **Measurement**: capture, activate engine, find delay, set delay, set inputs, rename, sync all, clear find, clear delays, clear everything, export all.
 - **Memory**: store the trace of an engine, show/hide, rename, delete.
 - **AVG**: on/off, export impulse.
@@ -38,13 +38,23 @@ When RiTA would have shown a message box, it answers anyway and puts the text in
 
 **EQ filters** start disabled in RiTA: a filter that is not enabled is stored but does not sound. Gain applies to Parametric and the shelving types, order to APF and FIR RevPhase.
 
+With DSP type RiTA, Kingray or Galaxy there are five filter types: Parametric, Low Shelf, High Shelf, APF and FIR RevPhase. **A Marani adds its own**, up to 21 in the dropdown, and which of them exist depends on the model and its mode, so one that model does not have is refused: Bell Adaptive Q, Bell Classic Q, the shelvings 1st, 2nd and Slope, Low and High Pass 1st, 2nd and VariQ, Band Pass and Notch. The ones that already existed keep their name, which is RiTA's own and not always the one on the Marani screen: the Marani bell is `Parametric`, its Hi-/Lo-Shelving VariQ are `High Shelf` and `Low Shelf`, and its All Pass is `APF`. The dropdown also takes a typed name.
+
+Each type uses only some of the fields, and the module sends only those: the gain goes to the bells and the shelvings, the order only to APF and FIR RevPhase, and the Q to the bells, the VariQ shelvings and cuts, Band Pass and Notch. On the two Slope shelvings the Q field is not a Q but the slope in dB/oct, 6 to 12. The 1st and 2nd shelvings and cuts use neither Q nor order. With a Marani the Q reaches that model's table, up to 128 (the Notch, 4 to 104), which is why the field goes beyond the 10 of RiTA's own filters.
+
 Each channel also has a number of bands in use, the *Bands* dropdown of RiTA's Equalizer window, 20 by default. From RiTA 2.8.1 a filter above that number cannot be switched on: RiTA refuses it and the filter stays off, while its frequency, type, gain and Q can still be written. The API does not report the band count and RiTA answers the same thing as for a linked channel, so the module writes to the log that the filter is either above the bands in use or in an EQ linked to another channel.
 
-In the **crossovers** (high-pass and low-pass) the last number is not a Q: it is the passband ripple in dB on Chebyshev I and Eliptic, the stopband attenuation in dB on Chebyshev II, and Butterworth, Linkwitz-Riley and Bessel ignore it. It takes 0.1 to 120. The Q of the **EQ filters** is a real Q factor, 0.1 to 10. Both are numbers of RiTA's own filter model: with another **DSP type** they become that processor's numbers, the ones its own screen shows.
+In the **crossovers** (high-pass and low-pass) the last number is not a Q: it is the passband ripple in dB on Chebyshev I and Eliptic, the stopband attenuation in dB on Chebyshev II, and Butterworth, Linkwitz-Riley and Bessel ignore it. It takes 0.1 to 120.
+
+From RiTA 2.8.1 the crossovers have one more type, **NXF**, on the Marani models and modes that have it (MIR FI, A and D, VA DF and MDA kDM; not the MIR E, the kTM or the PDA, and not in the *XOVER-IIR + FIR + 4 PEQ* modes of the MIR); anywhere else it is refused. On an NXF the order is not dB/oct but an attenuation code from 1 to 8 (−40, −45 … −70 and below −75 dB). With NXF on one cut the other can only be None or NXF: RiTA accepts whatever is written, and when the DSP is sent to the processor the other cut goes as None and says so in the log. Both are numbers of RiTA's own filter model: with another **DSP type** they become that processor's numbers, the ones its own screen shows.
 
 **DSP type** is the *DSP Type* of RiTA's Preferences > DSP: the filter model RiTA draws and computes its DSP with, its own or the one of an external processor (Kingray, Marani, Galaxy). Changing it makes RiTA convert the filters of the eight channels so the curves do not change, which moves the numbers: the Q of the Parametric and shelving filters and the frequency of the Bessel crossovers (a +12 dB bell with Q 2 becomes Q 3.99 in Kingray). What does not fit the new model is left at that processor's limit, so a +18 dB bell becomes +15 dB in Kingray, and RiTA's warning about it shows up in the log as "RiTA: …". The module writes the change to the log and reads the channels again, and it does the same when the type is changed in RiTA itself. Anything read before the change is a number of the old model.
 
 DSP type is in RiTA 2.8.0. On an earlier RiTA (a 2.8.0 beta or before) the action is refused with "This RiTA has no DSP Type" and `$(rita:settings_dsp_type)` stays empty; everything else works as usual. The dropdown also takes a typed name, for a newer RiTA that knows more processors.
+
+**DSP model** and **DSP mode**, from RiTA 2.8.1, go with it. The model is the Marani of *Preferences > DSP* (MIR FI, MIR A, MIR D, MIR E, MDA kDM, MDA kTM, PDA and VA DF); setting it puts RiTA in Marani with that model. The mode is the processor channel RiTA models, IN or OUT and, on a Marani, its EQ and crossover mode, with the same labels as the Marani software, for example `OUT: XOVER-IIR + 8 PEQ`. Kingray and Galaxy have an IN and an OUT mode; with DSP type RiTA there are no modes and both variables are empty.
+
+The mode decides how much of the channel there is: how many EQ filters, which crossovers and slopes, and the FIR. Because the labels depend on the model, there are more than forty of them and the API cannot list them, the mode is typed in by hand: `$(rita:settings_dsp_mode)` shows the one in use, and a label that is not of that model is refused. **Settings: DSP model** has a mode field of its own, which sends both in one go, the way RiTA checks them. Changing the model switches off the filters whose type the new model does not have, and RiTA says which in the log.
 
 **Alignment APFs** are the 2 all-pass filters per channel that RiTA's Auto Align writes (it replaces both on every run), separate from the 20 EQ filters. They can also be set by hand: frequency, order (1 or 2) and Q. The module follows them, so buttons update after an Auto Align. Older RiTA versions do not have them.
 
@@ -79,7 +89,7 @@ Connected, Mute group is muted, Mute group has channels, Sync All is set, Sync A
 ### Variables
 
 - `$(rita:generator_running)`, `generator_signal`, `generator_gain`, `generator_duration`, `generator_output1`, `generator_output2`
-- `$(rita:settings_fft_size)`, `settings_window`, `settings_smoothing`, `settings_spectrum_averages`, `settings_averaging`, `settings_sum`, `settings_coherence_threshold`, `settings_dsp_type`, `settings_reference_mode`, `settings_measurement_mode`
+- `$(rita:settings_fft_size)`, `settings_window`, `settings_smoothing`, `settings_spectrum_averages`, `settings_averaging`, `settings_sum`, `settings_coherence_threshold`, `settings_dsp_type`, `settings_dsp_model`, `settings_dsp_mode`, `settings_reference_mode`, `settings_measurement_mode`
 - `$(rita:sync_active)`, `sync_count`, `sync_possible`
 - `$(rita:mute_group_N_name)`, `mute_group_N_muted`, `mute_group_N_available` for N = 1..4
 - `$(rita:average_active)`, `average_has_data`, `average_count`, `average_engines`, `average_mode`, `average_name`

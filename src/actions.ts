@@ -6,6 +6,7 @@ import { AVERAGE_PROPS, DSP_PROPS, ENGINE_PROPS } from './state.js'
 import {
 	ALIGN_APF_CHOICES,
 	CHANNEL_CHOICES,
+	DSP_MODEL_CHOICES,
 	DSP_TYPE_CHOICES,
 	DURATION_CHOICES,
 	MUTE_GROUP_CHOICES,
@@ -13,8 +14,8 @@ import {
 	FFT_SIZE_CHOICES,
 	MEASUREMENT_MODE_CHOICES,
 	ON_OFF_TOGGLE_CHOICES,
-	PEQ_GAIN_TYPES,
 	PEQ_TYPE_CHOICES,
+	peqType,
 	RAW_ACTION_CHOICES,
 	REFERENCE_MODE_CHOICES,
 	SIGNAL_CHOICES,
@@ -39,6 +40,13 @@ const DSP_TYPE_HINT = {
 // The two Preferences modes also reached the API after RiTA 2.8.0.
 const MODE_HINT = {
 	'unknown property': 'This RiTA does not have that mode in Preferences: it needs a newer version',
+}
+
+// The Marani model and its mode arrived with RiTA 2.8.1.
+const DSP_MODEL_HINT = {
+	'unknown property': 'This RiTA has no DSP model or mode (Preferences > DSP): it needs 2.8.1 or later',
+	'unknown value':
+		'RiTA refused it: the model has to be one of its own list, and the mode one of the modes of that model, written exactly as RiTA writes it',
 }
 
 function resolveBool(mode: unknown, current: boolean | undefined): boolean {
@@ -172,12 +180,19 @@ export function UpdateActions(self: ModuleInstance): void {
 	const crossoverOptions = (defaultFrequency: number) =>
 		[
 			channelOption,
-			{ type: 'dropdown', id: 'filterType', label: 'Type', default: 'Linkwitz-Riley', choices: XOVER_TYPE_CHOICES },
+			{
+				type: 'dropdown',
+				id: 'filterType',
+				label: 'Type',
+				default: 'Linkwitz-Riley',
+				choices: XOVER_TYPE_CHOICES,
+				tooltip: 'NXF only on the Marani models and modes that have it; with the rest it is refused',
+			},
 			{ type: 'number', id: 'frequency', label: 'Frequency (Hz)', default: defaultFrequency, min: 20, max: 20000 },
 			{
 				type: 'number',
 				id: 'order',
-				label: 'Order (Linkwitz-Riley: even only)',
+				label: 'Order (Linkwitz-Riley: even only). On NXF, 1 to 8 is the attenuation, not dB/oct',
 				default: 4,
 				min: 1,
 				max: 8,
@@ -279,6 +294,56 @@ export function UpdateActions(self: ModuleInstance): void {
 			],
 			callback: async ({ options }) => {
 				await send('set', 'settings', { dspType: options.value }, DSP_TYPE_HINT)
+			},
+		},
+		settings_dsp_model: {
+			name: 'Settings: DSP model',
+			description:
+				'The Marani model of Preferences > DSP. Setting it puts RiTA in Marani with that model and its default mode, ' +
+				'or with the mode written here. The model and its mode decide which EQ filter types there are and whether the ' +
+				'cuts have NXF; filters of a type the new model does not have are switched off, and RiTA says which in the ' +
+				'log. Needs RiTA 2.8.1 or later.',
+			options: [
+				{
+					type: 'dropdown',
+					id: 'value',
+					label: 'Model',
+					default: 'Marani MIR A',
+					choices: DSP_MODEL_CHOICES,
+					allowCustom: true,
+					tooltip: 'A newer RiTA may know more models: type the name in',
+				},
+				{
+					type: 'textinput',
+					id: 'mode',
+					label: 'Mode (optional, exactly as RiTA writes it)',
+					default: '',
+					useVariables: true,
+				},
+			],
+			callback: async ({ options }) => {
+				// RiTA checks the pair together, so a model and a mode go in the same message.
+				const mode = String(options.mode ?? '').trim()
+				const properties = mode ? { dspModel: options.value, dspMode: mode } : { dspModel: options.value }
+				await send('set', 'settings', properties, DSP_MODEL_HINT)
+			},
+		},
+		settings_dsp_mode: {
+			name: 'Settings: DSP mode',
+			description:
+				'The mode of the processor channel: IN or OUT and, on a Marani, its EQ and crossover mode, exactly as RiTA ' +
+				'writes it, for example "OUT: XOVER-IIR + 8 PEQ". The labels depend on the model and there is no way to list ' +
+				'them over the API, so they are typed in; $(rita:settings_dsp_mode) shows the one in use. The mode limits the ' +
+				'PEQ bands, the cuts and their slopes, and the FIR. With DSP type RiTA there are no modes. ' +
+				'Needs RiTA 2.8.1 or later.',
+			options: [{ type: 'textinput', id: 'value', label: 'Mode', default: '', useVariables: true }],
+			callback: async ({ options }) => {
+				const mode = String(options.value ?? '').trim()
+				if (!mode) {
+					self.log('warn', 'Settings: DSP mode needs the mode as RiTA writes it, for example OUT: XOVER-IIR + 8 PEQ')
+					return
+				}
+				await send('set', 'settings', { dspMode: mode }, DSP_MODEL_HINT)
 			},
 		},
 		settings_reference_mode: {
@@ -691,17 +756,28 @@ export function UpdateActions(self: ModuleInstance): void {
 		},
 		dsp_peq: {
 			name: 'DSP: set EQ filter',
-			description: 'One of the 20 filters of the PEQ window. A filter that is not enabled is stored but does not sound.',
+			description:
+				'One of the 20 filters of the Equalizer window. A filter that is not enabled is stored but does not sound. ' +
+				'Each type uses only some of the fields, and only the ones it uses are sent: the rest are left alone. With a ' +
+				'Marani, which types exist depends on its model and mode, and one it does not have answers "unknown value".',
 			options: [
 				channelOption,
 				slotOption,
 				{ type: 'checkbox', id: 'enabled', label: 'Enabled', default: true },
-				{ type: 'dropdown', id: 'filterType', label: 'Type', default: 'Parametric', choices: PEQ_TYPE_CHOICES },
+				{
+					type: 'dropdown',
+					id: 'filterType',
+					label: 'Type',
+					default: 'Parametric',
+					choices: PEQ_TYPE_CHOICES,
+					allowCustom: true,
+					tooltip: 'Only Parametric, Low Shelf, High Shelf, APF and FIR RevPhase exist with DSP type RiTA',
+				},
 				{ type: 'number', id: 'frequency', label: 'Frequency (Hz)', default: 1000, min: 20, max: 20000 },
 				{
 					type: 'number',
 					id: 'gain',
-					label: 'Gain (dB), Parametric and shelving only',
+					label: 'Gain (dB), bells and shelvings only',
 					default: 0,
 					min: -20,
 					max: 20,
@@ -716,18 +792,30 @@ export function UpdateActions(self: ModuleInstance): void {
 					max: 2,
 					asInteger: true,
 				},
-				{ type: 'number', id: 'q', label: 'Q', default: 1, min: 0.1, max: 10, step: 0.01 },
+				{
+					type: 'number',
+					id: 'q',
+					label: 'Q, or the slope in dB/oct (6-12) on the Slope shelvings',
+					default: 1,
+					min: 0.1,
+					max: 128,
+					step: 0.01,
+				},
 			],
 			callback: async ({ options }) => {
 				const type = String(options.filterType)
+				const info = peqType(type)
 				const properties: Record<string, unknown> = {
 					type,
 					enabled: options.enabled !== false,
 					frequency: Number(options.frequency),
-					q: Number(options.q),
 				}
-				if (PEQ_GAIN_TYPES.includes(type)) properties.gain = Number(options.gain)
-				else properties.order = Number(options.order)
+				// Only the fields that type uses: a cut has no gain, and only the all-pass and the
+				// FIR RevPhase have an order. A type this module does not know (a newer RiTA) gets
+				// the usual pair, gain and Q.
+				if (!info || info.gain) properties.gain = Number(options.gain)
+				if (info?.width === 'order') properties.order = Number(options.order)
+				if (!info || info.width === 'q' || info.width === 'slope') properties.q = Number(options.q)
 				await send('set', `dsp/out/${options.channel}/peq/${Number(options.slot)}`, properties)
 			},
 		},

@@ -42,6 +42,9 @@ export interface AverageState {
 
 export interface SettingsState {
 	dspType?: string
+	// null when dspType is not a Marani (model) or is RiTA (mode).
+	dspModel?: string | null
+	dspMode?: string | null
 	referenceMode?: string
 	measurementMode?: string
 	fftSize?: string
@@ -92,9 +95,17 @@ export const AVERAGE_PROPS = ['active', 'count', 'hasData', 'engines', 'mode', '
 // with "unknown property", which would leave every settings variable empty. Each one is asked
 // for on its own and only added to the list once that RiTA has answered it.
 export const DSP_TYPE_PROP = 'dspType'
-export const OPTIONAL_SETTINGS_PROPS = [DSP_TYPE_PROP, 'referenceMode', 'measurementMode']
+export const OPTIONAL_SETTINGS_PROPS = [
+	DSP_TYPE_PROP,
+	'dspModel',
+	'dspMode',
+	'referenceMode',
+	'measurementMode',
+]
 export const OPTIONAL_SETTINGS_LABELS: Record<string, string> = {
 	dspType: 'DSP Type',
+	dspModel: 'DSP model',
+	dspMode: 'DSP mode',
 	referenceMode: 'reference mode',
 	measurementMode: 'measurement mode',
 }
