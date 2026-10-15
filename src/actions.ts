@@ -42,6 +42,14 @@ const MODE_HINT = {
 	'unknown property': 'This RiTA does not have that mode in Preferences: it needs a newer version',
 }
 
+// From RiTA 2.8.1, with a processor in the DSP Type the cuts are checked against its mode,
+// exactly like RiTA's own screen: a type or an order that mode does not have is refused
+// instead of being moved to the nearest one, as the real RiTA used to do.
+const XOVER_HINT = {
+	'unknown value':
+		'RiTA refused it. With a processor as DSP type, the crossover type and its order have to be ones that model and mode have; NXF only exists on some of them',
+}
+
 // The Marani model and its mode arrived with RiTA 2.8.1.
 const DSP_MODEL_HINT = {
 	'unknown property': 'This RiTA has no DSP model or mode (Preferences > DSP): it needs 2.8.1 or later',
@@ -869,24 +877,34 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'DSP: set high-pass',
 			options: [...crossoverOptions(80)],
 			callback: async ({ options }) => {
-				await send('set', `dsp/out/${options.channel}/highpass`, {
-					type: options.filterType,
-					frequency: Number(options.frequency),
-					order: Number(options.order),
-					q: Number(options.q),
-				})
+				await send(
+					'set',
+					`dsp/out/${options.channel}/highpass`,
+					{
+						type: options.filterType,
+						frequency: Number(options.frequency),
+						order: Number(options.order),
+						q: Number(options.q),
+					},
+					XOVER_HINT,
+				)
 			},
 		},
 		dsp_lowpass: {
 			name: 'DSP: set low-pass',
 			options: [...crossoverOptions(120)],
 			callback: async ({ options }) => {
-				await send('set', `dsp/out/${options.channel}/lowpass`, {
-					type: options.filterType,
-					frequency: Number(options.frequency),
-					order: Number(options.order),
-					q: Number(options.q),
-				})
+				await send(
+					'set',
+					`dsp/out/${options.channel}/lowpass`,
+					{
+						type: options.filterType,
+						frequency: Number(options.frequency),
+						order: Number(options.order),
+						q: Number(options.q),
+					},
+					XOVER_HINT,
+				)
 			},
 		},
 
