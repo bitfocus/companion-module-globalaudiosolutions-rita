@@ -47,6 +47,8 @@ export { UpgradeScripts }
 const RESYNC_MS = 30000
 // level is a meter: subscribing to it would send an event every half second per engine.
 const ENGINE_EVENT_PROPS = ENGINE_PROPS.filter((p) => p !== 'level')
+// How the log names each of the three Preferences settings that reshape the DSP.
+const DSP_FOLLOW_LABELS = { dspType: 'type is now', dspModel: 'model is now', dspMode: 'mode is now' }
 
 export default class ModuleInstance extends InstanceBase<ModuleSchema> implements ModuleInstanceLike {
 	config!: ModuleConfig
@@ -159,14 +161,31 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		if (target === 'generator') {
 			Object.assign(this.state.generator, body)
 		} else if (target === 'settings') {
-			const previousDspType = this.state.settings.dspType
+			const before = {
+				dspType: this.state.settings.dspType,
+				dspModel: this.state.settings.dspModel,
+				dspMode: this.state.settings.dspMode,
+			}
 			Object.assign(this.state.settings, body)
-			const dspType = this.state.settings.dspType
-			if (previousDspType !== undefined && dspType !== undefined && dspType !== previousDspType) {
+			// The type, the model and its mode all convert the filters of the eight channels and
+			// switch off what the new one does not have, so whatever was read is stale. RiTA says
+			// what it dropped in the notices of its own answer; this is about the cached values.
+			const changed = (Object.keys(before) as (keyof typeof before)[]).filter((key) => {
+				const now = this.state.settings[key]
+				return before[key] !== undefined && now !== undefined && now !== before[key]
+			})
+			if (changed.length) {
+				// The model and the mode go empty when the type stops being a processor: naming them
+				// would only put "null" in the log.
+				const what =
+					changed
+						.filter((key) => this.state.settings[key] != null)
+						.map((key) => `${DSP_FOLLOW_LABELS[key]} ${this.state.settings[key]}`)
+						.join(', ') || 'changed'
 				this.log(
 					'info',
-					`DSP Type is now ${dspType}: the Q of the bells and the shelvings and the frequency of the Bessel cuts ` +
-						'are now the numbers of that model, reading the channels again',
+					`DSP ${what}: the Q of the bells and the shelvings and the frequency of the Bessel cuts are now the ` +
+						'numbers of that model, and whatever it does not have is off. Reading the channels again',
 				)
 				void this.rereadDspAfterTypeChange()
 			}
