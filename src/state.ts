@@ -47,6 +47,8 @@ export interface SettingsState {
 	dspMode?: string | null
 	referenceMode?: string
 	measurementMode?: string
+	// From RiTA 2.8.1 the position of the exported files lives only in the API.
+	exportPosition?: string
 	fftSize?: string
 	window?: string
 	smoothing?: string
@@ -101,6 +103,7 @@ export const OPTIONAL_SETTINGS_PROPS = [
 	'dspMode',
 	'referenceMode',
 	'measurementMode',
+	'exportPosition',
 ]
 export const OPTIONAL_SETTINGS_LABELS: Record<string, string> = {
 	dspType: 'DSP Type',
@@ -108,6 +111,7 @@ export const OPTIONAL_SETTINGS_LABELS: Record<string, string> = {
 	dspMode: 'DSP mode',
 	referenceMode: 'reference mode',
 	measurementMode: 'measurement mode',
+	exportPosition: 'export position',
 }
 
 // RiTA changes fftSize on its own when Live TF starts with smoothing on, so it is followed, never restored.

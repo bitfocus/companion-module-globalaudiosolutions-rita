@@ -74,7 +74,9 @@ While a sync is in place, RiTA does nothing on a new Sync All (in RiTA the butto
 
 Each engine has two delays: `meas_N_delay` is the arrival of its measurement, and `meas_N_dsp_delay` is the delay of its DSP channel, which is what Sync All writes.
 
-**Measurement: export all** is RiTA's Export All: it exports the **selected** engines (the engine buttons, `selected` in the API) to the project folder, in the format chosen in RiTA. If a Position is written in RiTA, each file is named `<engine>_<position>` (and the AVG export gets `_<position>` too). The export runs in the background; its result (or error, such as no engine selected or no export folder) is written to the log.
+**Measurement: export all** is RiTA's Export All: it exports the **selected** engines (the engine buttons, `selected` in the API) to the project folder, in the format chosen in RiTA. The export runs in the background; its result (or error, such as no engine selected or no export folder) is written to the log.
+
+**Settings: export position** is what goes after the name of every exported file, `<engine>_<position>` and `<name>_<position>` for the AVG impulse. From RiTA 2.8.1 RiTA has no Position field on screen and this is the only way to set it: it stays until it is changed, empty means no position, it takes up to 60 characters, and whatever a file name cannot have becomes a dash. The field accepts variables, so a button can stamp the position it belongs to, and `$(rita:settings_export_position)` shows the one in use. RiTA cleans the text up, and the module writes to the log what it really kept.
 
 The **Settings** variables follow RiTA and are never put back by the module: if RiTA changes one by itself, that is what the buttons show.
 

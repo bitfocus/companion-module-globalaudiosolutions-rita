@@ -50,6 +50,12 @@ const XOVER_HINT = {
 		'RiTA refused it. With a processor as DSP type, the crossover type and its order have to be ones that model and mode have; NXF only exists on some of them',
 }
 
+// The position of the exported files also arrived with 2.8.1, and before that it was a field
+// on RiTA's own screen that the API could not write.
+const POSITION_HINT = {
+	'unknown property': 'This RiTA has no export position: it needs 2.8.1 or later, where the Position field moved to the API',
+}
+
 // The Marani model and its mode arrived with RiTA 2.8.1.
 const DSP_MODEL_HINT = {
 	'unknown property': 'This RiTA has no DSP model or mode (Preferences > DSP): it needs 2.8.1 or later',
@@ -352,6 +358,32 @@ export function UpdateActions(self: ModuleInstance): void {
 					return
 				}
 				await send('set', 'settings', { dspMode: mode }, DSP_MODEL_HINT)
+			},
+		},
+		settings_export_position: {
+			name: 'Settings: export position',
+			description:
+				'The position written after the name of every file the module exports: the engines of Measurement: export all ' +
+				'and the impulse of AVG: export impulse. It stays until it is changed, and empty means no position. RiTA has no ' +
+				'field for it any more, so this is the only way to set it. Up to 60 characters, and whatever a file name cannot ' +
+				'have becomes a dash. Needs RiTA 2.8.1 or later.',
+			options: [
+				{
+					type: 'textinput',
+					id: 'value',
+					label: 'Position (empty, none)',
+					default: '',
+					useVariables: true,
+				},
+			],
+			callback: async ({ options }) => {
+				const asked = String(options.value ?? '')
+				const response = await send('set', 'settings', { exportPosition: asked }, POSITION_HINT)
+				// RiTA cleans it up, so the log says what it really kept.
+				const kept = response?.exportPosition
+				if (typeof kept === 'string' && kept !== asked) {
+					self.log('info', kept ? `Export position stored as "${kept}"` : 'Export position cleared')
+				}
 			},
 		},
 		settings_reference_mode: {
