@@ -47,6 +47,12 @@ export { UpgradeScripts }
 const RESYNC_MS = 30000
 // level is a meter: subscribing to it would send an event every half second per engine.
 const ENGINE_EVENT_PROPS = ENGINE_PROPS.filter((p) => p !== 'level')
+/** Whether a request failed because of the password, which is the same for every target. */
+function isPasswordProblem(err: unknown): boolean {
+	if (err instanceof RitaError) return err.code === 'incorrect password' || err.code === 'too many attempts'
+	return err instanceof Error && err.message.includes('requires a password')
+}
+
 // How the log names each of the three Preferences settings that reshape the DSP.
 const DSP_FOLLOW_LABELS = { dspType: 'type is now', dspModel: 'model is now', dspMode: 'mode is now' }
 
@@ -302,6 +308,12 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 				const response = await this.rita.send('subscribe', target, properties)
 				this.applyResponse(target, response?.state)
 			} catch (err) {
+				// A password problem is the same for every target: saying it once beats 39 identical
+				// lines in the log, which is what the eight channels and their filters produced.
+				if (isPasswordProblem(err)) {
+					this.log('warn', `Cannot subscribe: ${(err as Error).message}`)
+					return
+				}
 				if (err instanceof RitaError && err.code === 'unknown action') {
 					this.eventsSupported = false
 					this.log('info', 'This RiTA does not send change events: polling instead')
