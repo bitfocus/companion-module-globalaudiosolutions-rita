@@ -59,8 +59,9 @@ const POSITION_HINT = {
 // The Marani model and its mode arrived with RiTA 2.8.1.
 const DSP_MODEL_HINT = {
 	'unknown property': 'This RiTA has no DSP model or mode (Preferences > DSP): it needs 2.8.1 or later',
+	// From RiTA 2.8.1 a mode asked for with DSP type RiTA answers this too, instead of an internal error.
 	'unknown value':
-		'RiTA refused it: the model has to be one of its own list, and the mode one of the modes of that model, written exactly as RiTA writes it',
+		'RiTA refused it: the model has to be one of its own list, and the mode one of the modes of that model, written exactly as RiTA writes it. With DSP type RiTA there are no modes at all',
 }
 
 function resolveBool(mode: unknown, current: boolean | undefined): boolean {
