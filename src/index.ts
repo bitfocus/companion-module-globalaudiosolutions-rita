@@ -17,6 +17,7 @@ import {
 	ENGINE_COUNT,
 	OPTIONAL_SETTINGS_LABELS,
 	OPTIONAL_SETTINGS_PROPS,
+	asList,
 	ENGINE_PROPS,
 	MUTE_GROUP_COUNT,
 	MUTE_GROUP_PROPS,
@@ -429,8 +430,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		if (!this.muteGroupsSupported) return
 		try {
 			const all = await this.rita.send('get', 'muteGroups')
-			if (!Array.isArray(all?.groups)) return
-			for (const group of all.groups) {
+			for (const group of asList<any>(all?.groups)) {
 				const index = Number(group.index)
 				if (index) Object.assign((this.state.muteGroups[index] ??= {}), group)
 			}
@@ -483,8 +483,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 
 	/** Message boxes RiTA would have shown: it answers instead of waiting for an OK, and says so here. */
 	logNotices(response: any): void {
-		if (!Array.isArray(response?.notices)) return
-		for (const notice of response.notices) {
+		for (const notice of asList<any>(response?.notices)) {
 			const answer = notice?.answer ? ` (answered ${notice.answer})` : ''
 			this.log('warn', `RiTA: ${notice?.title ?? ''} ${notice?.message ?? ''}${answer}`.trim())
 		}
@@ -493,8 +492,8 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 	/** The measurements list, as answered by get and by syncAll, clearFind, clearDelays and clearAll. */
 	applyOverview(overview: any): void {
 		if (!overview || typeof overview !== 'object') return
-		if (Array.isArray(overview.measurements)) {
-			for (const engine of overview.measurements) {
+		{
+			for (const engine of asList<any>(overview.measurements)) {
 				const index = Number(engine.index)
 				if (!index) continue
 				Object.assign((this.state.measurements[index] ??= {}), {

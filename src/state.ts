@@ -125,6 +125,16 @@ export const SETTINGS_PROPS = [
 	'coherenceThreshold',
 ]
 
+/**
+ * Reads a list RiTA sent. MATLAB collapses a one-element list into a bare value, so the
+ * average of a single engine arrives as engines: 1 and not [1], and the same happens with
+ * the mute groups, the notices and the channels a mute did not reach.
+ */
+export function asList<T>(value: unknown): T[] {
+	if (Array.isArray(value)) return value as T[]
+	return value === undefined || value === null ? [] : [value as T]
+}
+
 export function createEmptyState(): RitaState {
 	const state: RitaState = {
 		generator: {},

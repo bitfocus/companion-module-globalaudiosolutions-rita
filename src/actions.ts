@@ -2,7 +2,7 @@ import type { CompanionActionDefinitions } from '@companion-module/base'
 import type ModuleInstance from './index.js'
 import type { ActionsSchema } from './index.js'
 import { RitaError, type RitaAction } from './api.js'
-import { AVERAGE_PROPS, DSP_PROPS, ENGINE_PROPS } from './state.js'
+import { AVERAGE_PROPS, DSP_PROPS, ENGINE_PROPS, asList } from './state.js'
 import {
 	ALIGN_APF_CHOICES,
 	CHANNEL_CHOICES,
@@ -582,9 +582,8 @@ export function UpdateActions(self: ModuleInstance): void {
 						: await send('set', target, { muted: options.mode === 'on' }, hints)
 				if (!response) return
 				self.applyResponse(target, response)
-				if (Array.isArray(response.failed) && response.failed.length) {
-					self.log('warn', `Mute group ${group}: did not reach ${response.failed.join(', ')}`)
-				}
+				const failed = asList<string>(response.failed)
+				if (failed.length) self.log('warn', `Mute group ${group}: did not reach ${failed.join(', ')}`)
 			},
 		},
 
@@ -620,7 +619,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async () => {
 				const before = self.state.sync.syncCount
 				const response = await send('syncAll', 'measurements')
-				if (!Array.isArray(response?.measurements)) return
+				if (!asList(response?.measurements).length) return
 				// With a sync already in place RiTA does nothing and answers the same syncCount.
 				if (response.synced === true && before !== undefined && response.syncCount === before) {
 					self.log('warn', 'Sync all: a sync is already in place, clear it first with Measurement: clear find')

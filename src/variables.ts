@@ -1,6 +1,6 @@
 import type { CompanionVariableDefinitions, CompanionVariableValues } from '@companion-module/base'
 import type ModuleInstance from './index.js'
-import { ALIGN_APF_COUNT, CHANNEL_COUNT, ENGINE_COUNT, MUTE_GROUP_COUNT } from './state.js'
+import { ALIGN_APF_COUNT, CHANNEL_COUNT, ENGINE_COUNT, MUTE_GROUP_COUNT, asList } from './state.js'
 
 const onOff = (value: boolean | undefined, on: string, off: string): string =>
 	value === undefined ? '' : value ? on : off
@@ -75,7 +75,7 @@ export function UpdateVariableValues(self: ModuleInstance): void {
 		average_active: onOff(self.state.average.active, 'ON', 'OFF'),
 		average_has_data: onOff(self.state.average.hasData, 'YES', 'NO'),
 		average_count: self.state.average.count ?? '',
-		average_engines: Array.isArray(self.state.average.engines) ? self.state.average.engines.join(', ') : '',
+		average_engines: asList<number>(self.state.average.engines).join(', '),
 		average_mode: self.state.average.mode ?? '',
 		average_name: self.state.average.name ?? '',
 		settings_dsp_type: self.state.settings.dspType ?? '',
