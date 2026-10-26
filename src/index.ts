@@ -219,6 +219,11 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		for (let i = 1; i <= ENGINE_COUNT; i++) await this.refresh(`measurements/${i}`, ENGINE_EVENT_PROPS)
 	}
 
+	/** RiTA changes settings on its own: picking Spectrum moves fftSize off 64 FPPO. */
+	async refreshSettings(): Promise<void> {
+		await this.refresh('settings', this.settingsProps())
+	}
+
 	async refresh(target: string, properties?: string[]): Promise<void> {
 		try {
 			this.applyResponse(target, await this.rita.send('get', target, properties))

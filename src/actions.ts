@@ -31,6 +31,13 @@ const FIND_HINT = {
 	'unknown value': 'RiTA refused the value; if a find is in place, clear it first with Measurement: clear find',
 }
 
+// From RiTA 2.8.1 the Spectrum signal has no 64 FPPO, and choosing Spectrum moves the size
+// to 32768 by itself.
+const FFT_SIZE_HINT = {
+	'unknown value':
+		'RiTA refused the FFT size: with the Spectrum signal there is no 64 FPPO. And if a find is in place, a size that does not fit its delay is refused too: clear it with Measurement: clear find',
+}
+
 // DSP Type reached the API after RiTA 2.8.0, and the list of processors can grow.
 const DSP_TYPE_HINT = {
 	'unknown property': 'This RiTA has no DSP Type (Preferences > DSP): it needs a newer version',
@@ -238,7 +245,11 @@ export function UpdateActions(self: ModuleInstance): void {
 					await send('set', 'generator', { running: false })
 					return
 				}
-				if (signal !== 'Spectrum' && !(await send('set', 'generator', { signal: 'Spectrum' }))) return
+				if (signal !== 'Spectrum') {
+					if (!(await send('set', 'generator', { signal: 'Spectrum' }))) return
+					// Choosing Spectrum moves the FFT size off 64 FPPO, so what was read is stale.
+					await self.refreshSettings()
+				}
 				await capture(Number(options.engine ?? 1))
 			},
 		},
@@ -246,7 +257,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Generator: set signal',
 			options: [{ type: 'dropdown', id: 'signal', label: 'Signal', default: 'Sweep', choices: SIGNAL_CHOICES }],
 			callback: async ({ options }) => {
-				await send('set', 'generator', { signal: options.signal })
+				if (await send('set', 'generator', { signal: options.signal })) await self.refreshSettings()
 			},
 		},
 		generator_gain: {
@@ -431,7 +442,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Settings: FFT size',
 			options: [{ type: 'dropdown', id: 'value', label: 'FFT size', default: '16384', choices: FFT_SIZE_CHOICES }],
 			callback: async ({ options }) => {
-				await send('set', 'settings', { fftSize: options.value }, FIND_HINT)
+				await send('set', 'settings', { fftSize: options.value }, FFT_SIZE_HINT)
 			},
 		},
 		settings_window: {
