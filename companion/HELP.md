@@ -30,6 +30,8 @@ When RiTA would have shown a message box, it answers anyway and puts the text in
 
 **Spectrum on/off** selects Spectrum if needed and measures it on the chosen engine; off stops it. It can run on several engines: deactivate one with **Measurement: activate engine**.
 
+From RiTA 2.8.1 the **Spectrum** signal has no `64 FPPO` FFT size: choosing Spectrum moves the size to 32768 on its own, writing `64 FPPO` while it is selected is refused, and leaving Spectrum brings the size back. The module reads the settings again after every change of signal, so what the buttons show is what RiTA has.
+
 **Live TF** is not offered by RiTA 2.8.0: it is not in the signal list and the generator has no pink noise switch.
 
 **Measurement: set inputs** sets the inputs of that engine. In **1 Ref. Channel** mode the reference input goes to all eight engines, and in **1 Meas. Channel** mode so does the measurement input: RiTA says which in its reply and the module writes it to the log.
