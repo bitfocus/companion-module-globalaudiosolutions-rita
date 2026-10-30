@@ -14,7 +14,7 @@ Requires **RiTA 2.8.0 or later**. With an older RiTA the module still connects a
 ### Actions
 
 - **Generator**: Spectrum on/off, signal, gain, duration, outputs.
-- **Settings**: FFT size, window, smoothing, spectrum averages, averaging, sum, plot style, coherence threshold, DSP type, DSP model, DSP mode, reference mode, measurement mode.
+- **Settings**: FFT size, window, smoothing, spectrum averages, averaging, sum, plot style, coherence threshold, Long Sweep, DSP type, DSP model, DSP mode, reference mode, measurement mode.
 - **Measurement**: capture, activate engine, find delay, set delay, set inputs, rename, sync all, clear find, clear delays, clear everything, export all.
 - **Memory**: store the trace of an engine, show/hide, rename, delete.
 - **AVG**: on/off, export impulse.
@@ -30,7 +30,11 @@ When RiTA would have shown a message box, it answers anyway and puts the text in
 
 **Spectrum on/off** selects Spectrum if needed and measures it on the chosen engine; off stops it. It can run on several engines: deactivate one with **Measurement: activate engine**.
 
-From RiTA 2.8.1 the **Spectrum** signal has no `64 FPPO` FFT size: choosing Spectrum moves the size to 32768 on its own, writing `64 FPPO` while it is selected is refused, and leaving Spectrum brings the size back. The module reads the settings again after every change of signal, so what the buttons show is what RiTA has.
+From RiTA 2.8.1 the **Spectrum** signal has no `64 FPPO` FFT size, nor `128 FPPO` or `65536`: choosing Spectrum moves the size to 32768 on its own, writing one of those while it is selected is refused, and leaving Spectrum brings the size back. The module reads the settings again after every change of signal, so what the buttons show is what RiTA has.
+
+**Settings: Long Sweep on / off** is the Normal / Long Sweep switch of Preferences, off by default. On, each engine keeps 65536 samples instead of 32768, the FFT size list gains `128 FPPO` and `65536`, the sweep goes up to at least 2 s (1 s at 96 kHz) and the delay of a DSP channel reaches 1360 ms instead of 680. Off, the measurements are cut back to 32768 and a delay above 680 ms stays at 680. RiTA says in the log what it had to change, and the module reads the settings and the generator again afterwards, because switching it moves the FFT size and can raise the sweep duration. `$(rita:settings_long_sweep)` says whether it is on.
+
+The FFT size dropdown offers every size RiTA can have, so it also lists the two that need Long Sweep. Asking for one RiTA is not offering at that moment is refused and the module says in the log which of the three reasons it is.
 
 **Live TF** is not offered by RiTA 2.8.0: it is not in the signal list and the generator has no pink noise switch.
 
@@ -64,7 +68,7 @@ The mode decides how much of the channel there is: how many EQ filters, which cr
 
 **Mute groups** are the 4 assignable mute buttons of the external processor (DAP0408F, GALAXY, Marani…). Which channels belong to each group is set in RiTA, not from here, and a group can mix channels of several processors. *Toggle* does what the button does: it unmutes the group when every channel is muted, and mutes it otherwise. Feedbacks: **Mute group is muted** (red) and **Mute group has channels**; the name given in RiTA is in `$(rita:mute_group_N_name)`, so it can be the button text. A group with no channels on a connected processor answers "no channels", and a channel the processor did not take is written to the log.
 
-**AVG** is RiTA's average of the **selected** engines (not the active ones). **AVG: on / off** is the same control as *Settings: averaging on/off*. **AVG: export impulse** writes the impulse response of the average to the Memory Bank folder, in the format chosen in RiTA; the export runs in the background and its result (or error, such as no export folder or AVG off) is written to the log.
+**AVG** is RiTA's average of the **selected** engines (not the active ones). **AVG: on / off** is the same control as *Settings: averaging on/off*. From RiTA 2.8.1 **AVG and Sum exclude each other**, like their buttons in RiTA: switching one on switches the other off, and the module follows both. **AVG: export impulse** writes the impulse response of the average to the Memory Bank folder, in the format chosen in RiTA; the export runs in the background and its result (or error, such as no export folder or AVG off) is written to the log.
 
 **Measurement: sync all** is RiTA's Sync All (button and Y shortcut): it aligns with each other the engines that already have a measurement, without touching AVG. The new delays show up on the buttons at once and are written to the log. With no measured engine it answers "no active measurements".
 
@@ -95,7 +99,7 @@ Connected, Mute group is muted, Mute group has channels, Sync All is set, Sync A
 ### Variables
 
 - `$(rita:generator_running)`, `generator_signal`, `generator_gain`, `generator_duration`, `generator_output1`, `generator_output2`
-- `$(rita:settings_fft_size)`, `settings_window`, `settings_smoothing`, `settings_spectrum_averages`, `settings_averaging`, `settings_sum`, `settings_coherence_threshold`, `settings_dsp_type`, `settings_dsp_model`, `settings_dsp_mode`, `settings_reference_mode`, `settings_measurement_mode`
+- `$(rita:settings_fft_size)`, `settings_window`, `settings_smoothing`, `settings_spectrum_averages`, `settings_averaging`, `settings_sum`, `settings_coherence_threshold`, `settings_dsp_type`, `settings_dsp_model`, `settings_dsp_mode`, `settings_long_sweep`, `settings_reference_mode`, `settings_measurement_mode`
 - `$(rita:sync_active)`, `sync_count`, `sync_possible`
 - `$(rita:mute_group_N_name)`, `mute_group_N_muted`, `mute_group_N_available` for N = 1..4
 - `$(rita:average_active)`, `average_has_data`, `average_count`, `average_engines`, `average_mode`, `average_name`

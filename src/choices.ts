@@ -22,7 +22,23 @@ export const ON_OFF_TOGGLE_CHOICES: Choice[] = [
 export const SIGNAL_CHOICES = same(['Sweep', 'Multi Sweep', 'Pink', 'External', 'Spectrum'])
 export const DURATION_CHOICES: Choice[] = ['1', '2', '4', '8', '16'].map((v) => ({ id: v, label: `${v} s` }))
 
-export const FFT_SIZE_CHOICES = same(['64 FPPO', '32768', '16384', '8192', '4096', '2048', '1024', '512', '256', '128'])
+// The sizes of RiTA's FFT dropdown, in its own order. 128 FPPO and 65536 are only there with
+// Long Sweep on, and the Spectrum signal has neither those nor 64 FPPO: anything RiTA is not
+// offering at that moment answers "unknown value".
+export const FFT_SIZE_CHOICES = same([
+	'128 FPPO',
+	'64 FPPO',
+	'65536',
+	'32768',
+	'16384',
+	'8192',
+	'4096',
+	'2048',
+	'1024',
+	'512',
+	'256',
+	'128',
+])
 export const WINDOW_CHOICES = same([
 	'Rectangular',
 	'Hamming',
