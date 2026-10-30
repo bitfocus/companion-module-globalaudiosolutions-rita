@@ -35,7 +35,7 @@ const FIND_HINT = {
 // to 32768 by itself.
 const FFT_SIZE_HINT = {
 	'unknown value':
-		'RiTA refused the FFT size. 128 FPPO and 65536 need Long Sweep on; the Spectrum signal has none of those three and no 64 FPPO either; and if a find is in place, a size that does not fit its delay is refused too: clear it with Measurement: clear find',
+		'RiTA refused the FFT size. 128 FPPO and anything above 32768 need Auto FFT size on, and only up to the engine size of the moment, the one the Engine size variable shows; the Spectrum signal has none of those and no 64 FPPO either; and if a find is in place, a size that does not fit its delay is refused too: clear it with Measurement: clear find',
 }
 
 // DSP Type reached the API after RiTA 2.8.0, and the list of processors can grow.
@@ -57,9 +57,9 @@ const XOVER_HINT = {
 		'RiTA refused it. With a processor as DSP type, the crossover type and its order have to be ones that model and mode have; NXF only exists on some of them',
 }
 
-// Long Sweep arrived with RiTA 2.8.1 as well.
-const LONG_SWEEP_HINT = {
-	'unknown property': 'This RiTA has no Long Sweep (Preferences): it needs 2.8.1 or later',
+// Auto FFT size arrived with RiTA 2.8.1 as well.
+const FFT_AUTO_HINT = {
+	'unknown property': 'This RiTA has no Auto FFT size (Preferences): it needs 2.8.1 or later',
 }
 
 // The position of the exported files also arrived with 2.8.1, and before that it was a field
@@ -276,7 +276,10 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Generator: set duration',
 			options: [{ type: 'dropdown', id: 'duration', label: 'Duration', default: '2', choices: DURATION_CHOICES }],
 			callback: async ({ options }) => {
-				await send('set', 'generator', { duration: options.duration })
+				if (!(await send('set', 'generator', { duration: options.duration }))) return
+				// With Auto FFT size the engine keeps the next power of two above the sweep, so the
+				// duration moves the engine size and the FFT size with it.
+				if (self.state.settings.fftSizeAuto) await self.refreshSettings()
 			},
 		},
 		generator_outputs: {
@@ -377,20 +380,19 @@ export function UpdateActions(self: ModuleInstance): void {
 				await send('set', 'settings', { dspMode: mode }, DSP_MODEL_HINT)
 			},
 		},
-		settings_long_sweep: {
-			name: 'Settings: Long Sweep on / off',
+		settings_fft_size_auto: {
+			name: 'Settings: Auto FFT size on / off',
 			description:
-				'The Normal / Long Sweep switch of Preferences. On, each engine keeps 65536 samples instead of 32768, the FFT ' +
-				'size list gains 128 FPPO and 65536, the sweep goes up to at least 2 s (1 s at 96 kHz) and the channel delay ' +
-				'reaches 1360 ms instead of 680. Off, the measurements are cut back to 32768. RiTA says in the log what it had ' +
-				'to change. Needs RiTA 2.8.1 or later.',
+				'The Normal / Auto FFT Size switch of Preferences. On, each engine keeps the next power of two above the sweep ' +
+				'length, from 65536 to 262144 samples, the FFT size list gains those sizes and 128 FPPO, and the channel delay ' +
+				'reaches 680 ms for every 32768 samples (5440 at 262144). Off, each engine goes back to 32768 and the ' +
+				'measurements are cut to it. RiTA says in the log what it had to change. Needs RiTA 2.8.1 or later.',
 			options: [modeOption],
 			callback: async ({ options }) => {
-				const wanted = resolveBool(options.mode, self.state.settings.longSweep)
-				if (!(await send('set', 'settings', { longSweep: wanted }, LONG_SWEEP_HINT))) return
-				// Switching it moves the FFT size and can raise the sweep duration, so both are read again.
+				const wanted = resolveBool(options.mode, self.state.settings.fftSizeAuto)
+				if (!(await send('set', 'settings', { fftSizeAuto: wanted }, FFT_AUTO_HINT))) return
+				// It moves the engine size and with it the FFT size, so the settings are read again.
 				await self.refreshSettings()
-				await self.refresh('generator')
 			},
 		},
 		settings_export_position: {
@@ -793,10 +795,10 @@ export function UpdateActions(self: ModuleInstance): void {
 				{
 					type: 'number',
 					id: 'delay',
-					label: 'Delay (ms). Over 680 needs Long Sweep',
+					label: 'Delay (ms). Over 680 needs Auto FFT size, and 680 more per 32768 samples',
 					default: 0,
 					min: 0,
-					max: 1360,
+					max: 5440,
 					step: 0.01,
 				},
 			],

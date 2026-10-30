@@ -22,12 +22,15 @@ export const ON_OFF_TOGGLE_CHOICES: Choice[] = [
 export const SIGNAL_CHOICES = same(['Sweep', 'Multi Sweep', 'Pink', 'External', 'Spectrum'])
 export const DURATION_CHOICES: Choice[] = ['1', '2', '4', '8', '16'].map((v) => ({ id: v, label: `${v} s` }))
 
-// The sizes of RiTA's FFT dropdown, in its own order. 128 FPPO and 65536 are only there with
-// Long Sweep on, and the Spectrum signal has neither those nor 64 FPPO: anything RiTA is not
-// offering at that moment answers "unknown value".
+// The sizes of RiTA's FFT dropdown, in its own order and with every size it can ever offer.
+// 128 FPPO and anything above 32768 are only there with Auto FFT size on, and only up to the
+// engine size of the moment; the Spectrum signal has none of those and no 64 FPPO either.
+// Anything RiTA is not offering right then answers "unknown value".
 export const FFT_SIZE_CHOICES = same([
 	'128 FPPO',
 	'64 FPPO',
+	'262144',
+	'131072',
 	'65536',
 	'32768',
 	'16384',

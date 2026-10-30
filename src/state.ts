@@ -49,8 +49,11 @@ export interface SettingsState {
 	measurementMode?: string
 	// From RiTA 2.8.1 the position of the exported files lives only in the API.
 	exportPosition?: string
-	// Long Sweep: 65536 samples per engine instead of 32768.
-	longSweep?: boolean
+	// Auto FFT size: each engine keeps the next power of 2 above the sweep, 65536 to 262144.
+	fftSizeAuto?: boolean
+	// Read only: the samples each engine keeps, and that length in seconds.
+	engineSamples?: number
+	timeConstant?: number
 	fftSize?: string
 	window?: string
 	smoothing?: string
@@ -106,7 +109,9 @@ export const OPTIONAL_SETTINGS_PROPS = [
 	'referenceMode',
 	'measurementMode',
 	'exportPosition',
-	'longSweep',
+	'fftSizeAuto',
+	'engineSamples',
+	'timeConstant',
 ]
 export const OPTIONAL_SETTINGS_LABELS: Record<string, string> = {
 	dspType: 'DSP Type',
@@ -115,7 +120,9 @@ export const OPTIONAL_SETTINGS_LABELS: Record<string, string> = {
 	referenceMode: 'reference mode',
 	measurementMode: 'measurement mode',
 	exportPosition: 'export position',
-	longSweep: 'Long Sweep',
+	fftSizeAuto: 'Auto FFT size',
+	engineSamples: 'engine size',
+	timeConstant: 'time constant',
 }
 
 // RiTA changes fftSize on its own when Live TF starts with smoothing on, so it is followed, never restored.
