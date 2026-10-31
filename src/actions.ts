@@ -160,6 +160,16 @@ export function UpdateActions(self: ModuleInstance): void {
 				self.log('warn', `${action} ${target ?? ''}: ${hints[err.code]}`)
 				return undefined
 			}
+			// 'busy' is RiTA holding everything until it finishes: a single-shot measurement, a find
+			// or an export all, asked for from here or from RiTA's own window. The request is refused
+			// whole and nothing of it is applied, so pressing the button again when it ends is enough.
+			if (err instanceof RitaError && err.code === 'busy') {
+				self.log(
+					'warn',
+					`${action} ${target ?? ''}: RiTA is busy with a measurement, a find or an export, and changed nothing. Wait for it to finish`,
+				)
+				return undefined
+			}
 			// A linked channel (Link DSP in RiTA) follows its master, and the linked parts are read only.
 			if (err instanceof RitaError && err.code === 'find in place') {
 				self.log('warn', 'Clear delays needs the find cleared first: use Measurement: clear find')
@@ -198,6 +208,17 @@ export function UpdateActions(self: ModuleInstance): void {
 			'info',
 			`${what} is called "${kept}", not "${asked}": RiTA does not repeat the name of another engine, and it trims the text`,
 		)
+	}
+
+	// A single measurement (Sweep, Multi Sweep, Pink, External) holds the sound card and the
+	// signal file it is playing, so on a RiTA newer than 2.8.1 beta 03 the signal, the gain and
+	// the duration answer 'busy' while it runs and nothing of the request is applied: in RiTA
+	// those same controls are greyed out. On an earlier RiTA they went through and the
+	// measurement could be lost. Spectrum never blocks them: writing the signal stops it.
+	const generatorBusy = {
+		busy:
+			'a single measurement is running (Sweep, Multi Sweep, Pink or External) and RiTA changed nothing: the ' +
+			'signal, the gain and the duration have to wait until it finishes. Spectrum does not block them',
 	}
 
 	// Sweep, Multi Sweep, Pink and External measure once and block RiTA until done;
@@ -264,7 +285,7 @@ export function UpdateActions(self: ModuleInstance): void {
 					return
 				}
 				if (signal !== 'Spectrum') {
-					if (!(await send('set', 'generator', { signal: 'Spectrum' }))) return
+					if (!(await send('set', 'generator', { signal: 'Spectrum' }, generatorBusy))) return
 					// Choosing Spectrum moves the FFT size off 64 FPPO, so what was read is stale.
 					await self.refreshSettings()
 				}
@@ -275,24 +296,33 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Generator: set signal',
 			description:
 				'On a RiTA newer than 2.8.1 beta 03, choosing another signal while Spectrum is running stops it, so the next ' +
-				'capture measures. RiTA takes about a second and a half to stop, and the module shows it the moment it does.',
+				'capture measures. RiTA takes about a second and a half to stop, and the module shows it the moment it does. A ' +
+				'single measurement, on the other hand, is not interrupted: that same RiTA refuses the signal and changes ' +
+				'nothing while it runs, and the log says so.',
 			options: [{ type: 'dropdown', id: 'signal', label: 'Signal', default: 'Sweep', choices: SIGNAL_CHOICES }],
 			callback: async ({ options }) => {
-				if (await send('set', 'generator', { signal: options.signal })) await self.refreshSettings()
+				if (await send('set', 'generator', { signal: options.signal }, generatorBusy)) await self.refreshSettings()
 			},
 		},
 		generator_gain: {
 			name: 'Generator: set gain',
+			description:
+				'While a single measurement is running RiTA refuses this and changes nothing, on a RiTA newer than 2.8.1 ' +
+				'beta 03: the log says so, and the button works again as soon as the measurement ends.',
 			options: [{ type: 'number', id: 'gain', label: 'Gain (dB)', default: -24, min: -48, max: 0, step: 0.5 }],
 			callback: async ({ options }) => {
-				await send('set', 'generator', { gain: Number(options.gain) })
+				await send('set', 'generator', { gain: Number(options.gain) }, generatorBusy)
 			},
 		},
 		generator_duration: {
 			name: 'Generator: set duration',
+			description:
+				'The length of the sweep, which with Auto FFT size on is also the engine size. While a single measurement is ' +
+				'running a RiTA newer than 2.8.1 beta 03 refuses this and changes nothing, because the duration makes the ' +
+				'signal again.',
 			options: [{ type: 'dropdown', id: 'duration', label: 'Duration', default: '2', choices: DURATION_CHOICES }],
 			callback: async ({ options }) => {
-				if (!(await send('set', 'generator', { duration: options.duration }))) return
+				if (!(await send('set', 'generator', { duration: options.duration }, generatorBusy))) return
 				// With Auto FFT size the engine keeps the next power of two above the sweep, so the
 				// duration moves the engine size and the FFT size with it.
 				if (self.state.settings.fftSizeAuto) await self.refreshSettings()
