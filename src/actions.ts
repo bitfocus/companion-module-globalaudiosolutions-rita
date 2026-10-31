@@ -188,6 +188,18 @@ export function UpdateActions(self: ModuleInstance): void {
 		}
 	}
 
+	// The name of an engine and the name of its DSP channel are one field in RiTA, and a set is
+	// answered with how the field ended up: from a RiTA newer than 2.8.1 beta 03 a name another
+	// engine already has is not repeated, and the text is trimmed.
+	const logName = (what: string, asked: string, response: any): void => {
+		const kept = response?.name
+		if (typeof kept !== 'string' || kept === asked) return
+		self.log(
+			'info',
+			`${what} is called "${kept}", not "${asked}": RiTA does not repeat the name of another engine, and it trims the text`,
+		)
+	}
+
 	// Sweep, Multi Sweep, Pink and External measure once and block RiTA until done;
 	// Spectrum and Live TF answer continuous:true and keep running until the generator is stopped.
 	const capture = async (engine: number): Promise<void> => {
@@ -597,9 +609,15 @@ export function UpdateActions(self: ModuleInstance): void {
 		},
 		measurement_name: {
 			name: 'Measurement: rename engine',
+			description:
+				'The engine and its DSP channel have one name, so this is the same as DSP: rename channel. On a RiTA ' +
+				'newer than 2.8.1 beta 03 a name another engine already has is not repeated: it takes the first free ' +
+				'one, Bajo and then Bajo_1, and the log says what RiTA kept. An empty name, and Name, can be repeated.',
 			options: [engineOption, { type: 'textinput', id: 'name', label: 'Name', default: '', useVariables: true }],
 			callback: async ({ options }) => {
-				await send('set', `measurements/${options.engine}`, { name: String(options.name) })
+				const asked = String(options.name)
+				const response = await send('set', `measurements/${options.engine}`, { name: asked })
+				logName(`Engine ${options.engine}`, asked, response)
 			},
 		},
 
@@ -834,9 +852,14 @@ export function UpdateActions(self: ModuleInstance): void {
 		},
 		dsp_name: {
 			name: 'DSP: rename channel',
+			description:
+				'The same name as the engine of that channel, the one Measurement: rename engine writes: a name ' +
+				'another channel already has is not repeated on a RiTA newer than 2.8.1 beta 03.',
 			options: [channelOption, { type: 'textinput', id: 'name', label: 'Name', default: '', useVariables: true }],
 			callback: async ({ options }) => {
-				await send('set', `dsp/out/${options.channel}`, { name: String(options.name) })
+				const asked = String(options.name)
+				const response = await send('set', `dsp/out/${options.channel}`, { name: asked })
+				logName(`DSP channel ${options.channel}`, asked, response)
 			},
 		},
 		dsp_clear: {
