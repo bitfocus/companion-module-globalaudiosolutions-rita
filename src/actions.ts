@@ -199,7 +199,7 @@ export function UpdateActions(self: ModuleInstance): void {
 	}
 
 	// The name of an engine and the name of its DSP channel are one field in RiTA, and a set is
-	// answered with how the field ended up: from RiTA 2.8.1 beta 04 a name another
+	// answered with how the field ended up: from RiTA 2.8.1 a name another
 	// engine already has is not repeated, and the text is trimmed.
 	const logName = (what: string, asked: string, response: any): void => {
 		const kept = response?.name
@@ -211,7 +211,7 @@ export function UpdateActions(self: ModuleInstance): void {
 	}
 
 	// A single measurement (Sweep, Multi Sweep, Pink, External) holds the sound card and the
-	// signal file it is playing, so from RiTA 2.8.1 beta 04 the signal, the gain and
+	// signal file it is playing, so from RiTA 2.8.1 the signal, the gain and
 	// the duration answer 'busy' while it runs and nothing of the request is applied: in RiTA
 	// those same controls are greyed out. On an earlier RiTA they went through and the
 	// measurement could be lost. Spectrum never blocks them: writing the signal stops it.
@@ -226,7 +226,7 @@ export function UpdateActions(self: ModuleInstance): void {
 	const capture = async (engine: number): Promise<void> => {
 		const response = await send('capture', `measurements/${engine}`, undefined, {
 			'generator running':
-				'a continuous measurement is running: stop it first with Generator: Spectrum on / off, or by choosing another signal, which stops it from RiTA 2.8.1 beta 04',
+				'a continuous measurement is running: stop it first with Generator: Spectrum on / off, or by choosing another signal, which from RiTA 2.8.1 stops it',
 		})
 		if (!response) return
 		if (response.continuous) {
@@ -295,7 +295,7 @@ export function UpdateActions(self: ModuleInstance): void {
 		generator_signal: {
 			name: 'Generator: set signal',
 			description:
-				'From RiTA 2.8.1 beta 04, choosing another signal while Spectrum is running stops it, so the next ' +
+				'From RiTA 2.8.1, choosing another signal while Spectrum is running stops it, so the next ' +
 				'capture measures. RiTA takes about a second and a half to stop, and the module shows it the moment it does. A ' +
 				'single measurement, on the other hand, is not interrupted: that same RiTA refuses the signal and changes ' +
 				'nothing while it runs, and the log says so.',
@@ -307,7 +307,7 @@ export function UpdateActions(self: ModuleInstance): void {
 		generator_gain: {
 			name: 'Generator: set gain',
 			description:
-				'While a single measurement is running, RiTA 2.8.1 beta 04 and later refuse this and change nothing: the ' +
+				'While a single measurement is running, RiTA 2.8.1 and later refuse this and change nothing: the ' +
 				'log says so, and the button works again as soon as the measurement ends.',
 			options: [{ type: 'number', id: 'gain', label: 'Gain (dB)', default: -24, min: -48, max: 0, step: 0.5 }],
 			callback: async ({ options }) => {
@@ -318,7 +318,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Generator: set duration',
 			description:
 				'The length of the sweep, which with Auto FFT size on is also the engine size. While a single measurement is ' +
-				'running, RiTA 2.8.1 beta 04 and later refuse this and change nothing, because the duration makes the ' +
+				'running, RiTA 2.8.1 and later refuse this and change nothing, because the duration makes the ' +
 				'signal again.',
 			options: [{ type: 'dropdown', id: 'duration', label: 'Duration', default: '2', choices: DURATION_CHOICES }],
 			callback: async ({ options }) => {
@@ -641,7 +641,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Measurement: rename engine',
 			description:
 				'The engine and its DSP channel have one name, so this is the same as DSP: rename channel. From RiTA ' +
-				'2.8.1 beta 04 a name another engine already has is not repeated: it takes the first free ' +
+				'2.8.1 a name another engine already has is not repeated: it takes the first free ' +
 				'one, Bajo and then Bajo_1, and the log says what RiTA kept. An empty name, and Name, can be repeated.',
 			options: [engineOption, { type: 'textinput', id: 'name', label: 'Name', default: '', useVariables: true }],
 			callback: async ({ options }) => {
@@ -781,14 +781,14 @@ export function UpdateActions(self: ModuleInstance): void {
 		memory_capture: {
 			name: 'Memory: store trace from engine',
 			description:
-				"The memory takes the engine's name, and from RiTA 2.8.1 beta 04 a name already in the " +
+				"The memory takes the engine's name, and from RiTA 2.8.1 a name already in the " +
 				'table takes the first free one instead: Main, then Main_1, Main_2. The log says which row it is ' +
 				'and what it ended up called, which is the name the other Memory actions take.',
 			options: [engineOption],
 			callback: async ({ options }) => {
 				const response = await send('capture', 'memories', { measurement: Number(options.engine) })
 				if (!response) return
-				// RiTA 2.8.1 beta 04 answers the name the row ended up with, but every RiTA
+				// RiTA 2.8.1 answers the name the row ended up with, but every RiTA
 				// before that one answers the name it asked for and renames the row afterwards, so the
 				// table is read back: with either of them the log says what the memory is really called.
 				const list = await send('get', 'memories')
@@ -885,7 +885,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'DSP: rename channel',
 			description:
 				'The same name as the engine of that channel, the one Measurement: rename engine writes: a name ' +
-				'another channel already has is not repeated from RiTA 2.8.1 beta 04.',
+				'another channel already has is not repeated from RiTA 2.8.1.',
 			options: [channelOption, { type: 'textinput', id: 'name', label: 'Name', default: '', useVariables: true }],
 			callback: async ({ options }) => {
 				const asked = String(options.name)
