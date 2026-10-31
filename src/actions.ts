@@ -758,8 +758,9 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async ({ options }) => {
 				const response = await send('capture', 'memories', { measurement: Number(options.engine) })
 				if (!response) return
-				// RiTA answers with the name it asked for and renames the row afterwards when that name was
-				// taken, so the table is the only thing that says how the memory ended up called.
+				// A RiTA newer than 2.8.1 beta 03 answers the name the row ended up with, but every RiTA
+				// before that one answers the name it asked for and renames the row afterwards, so the
+				// table is read back: with either of them the log says what the memory is really called.
 				const list = await send('get', 'memories')
 				const row = asList<any>(list?.memories).find((m) => Number(m?.index) === Number(response.index))
 				const name = typeof row?.name === 'string' && row.name ? row.name : response.name
