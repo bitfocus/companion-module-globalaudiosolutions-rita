@@ -193,7 +193,7 @@ export function UpdateActions(self: ModuleInstance): void {
 	const capture = async (engine: number): Promise<void> => {
 		const response = await send('capture', `measurements/${engine}`, undefined, {
 			'generator running':
-				'a continuous measurement is running: stop it first with Generator: Spectrum on / off, or by choosing another signal, which stops it from RiTA 2.8.1 beta 03 on',
+				'a continuous measurement is running: stop it first with Generator: Spectrum on / off, or by choosing another signal, which stops it on a RiTA newer than 2.8.1 beta 03',
 		})
 		if (!response) return
 		if (response.continuous) {
@@ -262,8 +262,8 @@ export function UpdateActions(self: ModuleInstance): void {
 		generator_signal: {
 			name: 'Generator: set signal',
 			description:
-				'From RiTA 2.8.1 beta 03, choosing another signal while Spectrum is running stops it, so the next capture ' +
-				'measures. RiTA takes about a second and a half to stop, and the module shows it the moment it does.',
+				'On a RiTA newer than 2.8.1 beta 03, choosing another signal while Spectrum is running stops it, so the next ' +
+				'capture measures. RiTA takes about a second and a half to stop, and the module shows it the moment it does.',
 			options: [{ type: 'dropdown', id: 'signal', label: 'Signal', default: 'Sweep', choices: SIGNAL_CHOICES }],
 			callback: async ({ options }) => {
 				if (await send('set', 'generator', { signal: options.signal })) await self.refreshSettings()
@@ -732,9 +732,20 @@ export function UpdateActions(self: ModuleInstance): void {
 
 		memory_capture: {
 			name: 'Memory: store trace from engine',
+			description:
+				"The memory takes the engine's name, and on a RiTA newer than 2.8.1 beta 03 a name already in the " +
+				'table takes the first free one instead: Main, then Main_1, Main_2. The log says which row it is ' +
+				'and what it ended up called, which is the name the other Memory actions take.',
 			options: [engineOption],
 			callback: async ({ options }) => {
-				await send('capture', 'memories', { measurement: Number(options.engine) })
+				const response = await send('capture', 'memories', { measurement: Number(options.engine) })
+				if (!response) return
+				// RiTA answers with the name it asked for and renames the row afterwards when that name was
+				// taken, so the table is the only thing that says how the memory ended up called.
+				const list = await send('get', 'memories')
+				const row = asList<any>(list?.memories).find((m) => Number(m?.index) === Number(response.index))
+				const name = typeof row?.name === 'string' && row.name ? row.name : response.name
+				self.log('info', `Stored engine ${response.measurement ?? options.engine} as memory ${response.index} "${name}"`)
 			},
 		},
 		memory_visible: {
