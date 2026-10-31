@@ -65,7 +65,8 @@ const FFT_AUTO_HINT = {
 // The position of the exported files also arrived with 2.8.1, and before that it was a field
 // on RiTA's own screen that the API could not write.
 const POSITION_HINT = {
-	'unknown property': 'This RiTA has no export position: it needs 2.8.1 or later, where the Position field moved to the API',
+	'unknown property':
+		'This RiTA has no export position: it needs 2.8.1 or later, where the Position field moved to the API',
 }
 
 // The Marani model and its mode arrived with RiTA 2.8.1.
@@ -531,9 +532,7 @@ export function UpdateActions(self: ModuleInstance): void {
 		},
 		settings_spectrum_averages: {
 			name: 'Settings: spectrum averages',
-			options: [
-				{ type: 'dropdown', id: 'value', label: 'Averages', default: '1', choices: SPECTRUM_AVERAGES_CHOICES },
-			],
+			options: [{ type: 'dropdown', id: 'value', label: 'Averages', default: '1', choices: SPECTRUM_AVERAGES_CHOICES }],
 			callback: async ({ options }) => {
 				await send('set', 'settings', { spectrumAverages: options.value })
 			},
@@ -627,8 +626,24 @@ export function UpdateActions(self: ModuleInstance): void {
 				'Sound card input channels of the engine. In 1 Ref. Channel mode RiTA applies the reference input to all eight engines.',
 			options: [
 				engineOption,
-				{ type: 'number', id: 'measurementInput', label: 'Measurement input', default: 1, min: 1, max: 64, asInteger: true },
-				{ type: 'number', id: 'referenceInput', label: 'Reference input', default: 2, min: 1, max: 64, asInteger: true },
+				{
+					type: 'number',
+					id: 'measurementInput',
+					label: 'Measurement input',
+					default: 1,
+					min: 1,
+					max: 64,
+					asInteger: true,
+				},
+				{
+					type: 'number',
+					id: 'referenceInput',
+					label: 'Reference input',
+					default: 2,
+					min: 1,
+					max: 64,
+					asInteger: true,
+				},
 			],
 			callback: async ({ options }) => {
 				await send('set', `measurements/${options.engine}`, {
@@ -722,9 +737,7 @@ export function UpdateActions(self: ModuleInstance): void {
 						level: m.level,
 					})
 				}
-				const aligned = response.measurements
-					.filter((m: any) => m.active)
-					.map((m: any) => `${m.name} ${m.delay} ms`)
+				const aligned = response.measurements.filter((m: any) => m.active).map((m: any) => `${m.name} ${m.delay} ms`)
 				self.log('info', `Sync all: ${aligned.length ? aligned.join(', ') : 'done'}`)
 			},
 		},
@@ -794,7 +807,10 @@ export function UpdateActions(self: ModuleInstance): void {
 				const list = await send('get', 'memories')
 				const row = asList<any>(list?.memories).find((m) => Number(m?.index) === Number(response.index))
 				const name = typeof row?.name === 'string' && row.name ? row.name : response.name
-				self.log('info', `Stored engine ${response.measurement ?? options.engine} as memory ${response.index} "${name}"`)
+				self.log(
+					'info',
+					`Stored engine ${response.measurement ?? options.engine} as memory ${response.index} "${name}"`,
+				)
 			},
 		},
 		memory_visible: {

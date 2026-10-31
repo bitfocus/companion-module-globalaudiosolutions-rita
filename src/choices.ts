@@ -127,4 +127,19 @@ export const XOVER_TYPE_CHOICES = same([
 	'NXF',
 ])
 
-export const RAW_ACTION_CHOICES = same(['get', 'set', 'capture', 'delete', 'findDelay', 'clear', 'export', 'exportAll', 'syncAll', 'clearFind', 'clearDelays', 'clearAll', 'toggle', 'refresh'])
+export const RAW_ACTION_CHOICES = same([
+	'get',
+	'set',
+	'capture',
+	'delete',
+	'findDelay',
+	'clear',
+	'export',
+	'exportAll',
+	'syncAll',
+	'clearFind',
+	'clearDelays',
+	'clearAll',
+	'toggle',
+	'refresh',
+])

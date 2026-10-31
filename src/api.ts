@@ -149,13 +149,17 @@ export class RitaClient {
 		const text = JSON.stringify(message)
 
 		return new Promise((resolve, reject) => {
-			const timer = setTimeout(() => {
-				this.pending.delete(sequenceNumber)
-				reject(new Error(`no reply to ${action} ${target ?? ''}`.trim()))
-			}, REQUEST_TIMEOUT_MS + Math.max(0, this.busyUntil - Date.now()))
+			const timer = setTimeout(
+				() => {
+					this.pending.delete(sequenceNumber)
+					reject(new Error(`no reply to ${action} ${target ?? ''}`.trim()))
+				},
+				REQUEST_TIMEOUT_MS + Math.max(0, this.busyUntil - Date.now()),
+			)
 			this.pending.set(sequenceNumber, { resolve, reject, timer })
 
-			if (this.module.config.verbose) this.module.log('debug', `> ${text.replace(/("password"\s*:\s*)"[^"]*"/g, '$1"***"')}`)
+			if (this.module.config.verbose)
+				this.module.log('debug', `> ${text.replace(/("password"\s*:\s*)"[^"]*"/g, '$1"***"')}`)
 			ws.send(text, (err) => {
 				if (!err) return
 				clearTimeout(timer)

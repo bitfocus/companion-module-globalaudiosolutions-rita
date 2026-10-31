@@ -163,8 +163,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				{ type: 'dropdown', id: 'channel', label: 'Channel', default: '1', choices: CHANNEL_CHOICES },
 				{ type: 'dropdown', id: 'slot', label: 'Alignment APF', default: '1', choices: ALIGN_APF_CHOICES },
 			],
-			callback: ({ options }) =>
-				self.state.alignApf[Number(options.channel)]?.[Number(options.slot)]?.enabled === true,
+			callback: ({ options }) => self.state.alignApf[Number(options.channel)]?.[Number(options.slot)]?.enabled === true,
 		},
 	}
 

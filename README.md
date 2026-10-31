@@ -38,13 +38,13 @@ rapiStreamDemo(26101, 3600)
 
 ## Estructura
 
-| Fichero | Contenido |
-|---|---|
-| `src/index.ts` | Instancia del módulo, ciclo de vida y sondeo de estado |
-| `src/api.ts` | Cliente WebSocket: grupo de puertos, `sequenceNumber`, contraseña, reconexión |
-| `src/actions.ts` | Acciones |
-| `src/feedbacks.ts` | Feedbacks |
-| `src/variables.ts` | Variables |
-| `src/choices.ts` | Listas de valores permitidos, copiadas de la referencia |
-| `src/state.ts` | Estado en caché |
-| `src/upgrades.ts` | Scripts de actualización de configuraciones antiguas |
+| Fichero            | Contenido                                                                     |
+| ------------------ | ----------------------------------------------------------------------------- |
+| `src/index.ts`     | Instancia del módulo, ciclo de vida y sondeo de estado                        |
+| `src/api.ts`       | Cliente WebSocket: grupo de puertos, `sequenceNumber`, contraseña, reconexión |
+| `src/actions.ts`   | Acciones                                                                      |
+| `src/feedbacks.ts` | Feedbacks                                                                     |
+| `src/variables.ts` | Variables                                                                     |
+| `src/choices.ts`   | Listas de valores permitidos, copiadas de la referencia                       |
+| `src/state.ts`     | Estado en caché                                                               |
+| `src/upgrades.ts`  | Scripts de actualización de configuraciones antiguas                          |

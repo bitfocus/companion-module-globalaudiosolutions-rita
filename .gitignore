@@ -1,8 +1,13 @@
 node_modules/
-dist/
-pkg/
-*.tgz
+package-lock.json
+/pkg
+/*.tgz
+/dist
+DEBUG-*
+/.yarn
+/.vscode
+
+# extras of this module
 *.log
 .DS_Store
-.yarn/
 .pnp.*
