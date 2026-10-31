@@ -36,7 +36,16 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			name: 'Mute group is muted',
 			description: 'Every channel of the group is muted on the processor, however it was muted',
 			defaultStyle: RED,
-			options: [{ type: 'dropdown', id: 'group', label: 'Mute group', default: '1', choices: MUTE_GROUP_CHOICES }],
+			options: [
+				{
+					type: 'dropdown',
+					id: 'group',
+					label: 'Mute group',
+					default: '1',
+					choices: MUTE_GROUP_CHOICES,
+					expressionDescription: 'Mute group number as text, 1 to 8',
+				},
+			],
 			callback: ({ options }) => self.state.muteGroups[Number(options.group)]?.muted === true,
 		},
 		mute_group_available: {
@@ -44,7 +53,16 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			name: 'Mute group has channels',
 			description: 'The group has channels on a connected processor, so its button does something',
 			defaultStyle: GREEN,
-			options: [{ type: 'dropdown', id: 'group', label: 'Mute group', default: '1', choices: MUTE_GROUP_CHOICES }],
+			options: [
+				{
+					type: 'dropdown',
+					id: 'group',
+					label: 'Mute group',
+					default: '1',
+					choices: MUTE_GROUP_CHOICES,
+					expressionDescription: 'Mute group number as text, 1 to 8',
+				},
+			],
 			callback: ({ options }) => self.state.muteGroups[Number(options.group)]?.available === true,
 		},
 		average_active: {
@@ -138,21 +156,48 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			type: 'boolean',
 			name: 'Measurement engine is active',
 			defaultStyle: GREEN,
-			options: [{ type: 'dropdown', id: 'engine', label: 'Engine', default: '1', choices: ENGINE_CHOICES }],
+			options: [
+				{
+					type: 'dropdown',
+					id: 'engine',
+					label: 'Engine',
+					default: '1',
+					choices: ENGINE_CHOICES,
+					expressionDescription: 'Engine number as text, 1 to 8',
+				},
+			],
 			callback: ({ options }) => self.state.measurements[Number(options.engine)]?.active === true,
 		},
 		measurement_selected: {
 			type: 'boolean',
 			name: 'Measurement engine is selected',
 			defaultStyle: GREEN,
-			options: [{ type: 'dropdown', id: 'engine', label: 'Engine', default: '1', choices: ENGINE_CHOICES }],
+			options: [
+				{
+					type: 'dropdown',
+					id: 'engine',
+					label: 'Engine',
+					default: '1',
+					choices: ENGINE_CHOICES,
+					expressionDescription: 'Engine number as text, 1 to 8',
+				},
+			],
 			callback: ({ options }) => self.state.measurements[Number(options.engine)]?.selected === true,
 		},
 		dsp_polarity: {
 			type: 'boolean',
 			name: 'DSP channel polarity is inverted',
 			defaultStyle: RED,
-			options: [{ type: 'dropdown', id: 'channel', label: 'Channel', default: '1', choices: CHANNEL_CHOICES }],
+			options: [
+				{
+					type: 'dropdown',
+					id: 'channel',
+					label: 'Channel',
+					default: '1',
+					choices: CHANNEL_CHOICES,
+					expressionDescription: 'Channel number as text, 1 to 8',
+				},
+			],
 			callback: ({ options }) => self.state.dsp[Number(options.channel)]?.polarity === true,
 		},
 		dsp_align_apf_enabled: {
@@ -160,8 +205,22 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			name: 'DSP alignment APF is enabled',
 			defaultStyle: GREEN,
 			options: [
-				{ type: 'dropdown', id: 'channel', label: 'Channel', default: '1', choices: CHANNEL_CHOICES },
-				{ type: 'dropdown', id: 'slot', label: 'Alignment APF', default: '1', choices: ALIGN_APF_CHOICES },
+				{
+					type: 'dropdown',
+					id: 'channel',
+					label: 'Channel',
+					default: '1',
+					choices: CHANNEL_CHOICES,
+					expressionDescription: 'Channel number as text, 1 to 8',
+				},
+				{
+					type: 'dropdown',
+					id: 'slot',
+					label: 'Alignment APF',
+					default: '1',
+					choices: ALIGN_APF_CHOICES,
+					expressionDescription: 'APF number as text, 1 or 2',
+				},
 			],
 			callback: ({ options }) => self.state.alignApf[Number(options.channel)]?.[Number(options.slot)]?.enabled === true,
 		},

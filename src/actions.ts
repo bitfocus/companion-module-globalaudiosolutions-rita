@@ -1,7 +1,7 @@
 import type { CompanionActionDefinitions } from '@companion-module/base'
 import type ModuleInstance from './index.js'
 import type { ActionsSchema } from './index.js'
-import { RitaError, type RitaAction } from './api.js'
+import { RitaError, wait, type RitaAction } from './api.js'
 import { AVERAGE_PROPS, DSP_PROPS, ENGINE_PROPS, asList } from './state.js'
 import {
 	ALIGN_APF_CHOICES,
@@ -89,6 +89,7 @@ const channelOption = {
 	label: 'Channel',
 	default: '1',
 	choices: CHANNEL_CHOICES,
+	expressionDescription: 'Channel number as text, 1 to 8',
 } as const
 
 const engineOption = {
@@ -97,14 +98,21 @@ const engineOption = {
 	label: 'Engine',
 	default: '1',
 	choices: ENGINE_CHOICES,
+	// In expression mode the result has to be the number as text, '1' to '8': a number does
+	// not match the list and Companion skips the action.
+	expressionDescription: 'Engine number as text, 1 to 8',
 } as const
 
+// On, Off or Toggle is a choice, not a value to compute: an expression here would have to
+// give exactly 'on', 'off' or 'toggle', and anything else makes Companion skip the action
+// without saying why. Two buttons, or On and Off in one, do the same job and always work.
 const modeOption = {
 	type: 'dropdown',
 	id: 'mode',
 	label: 'Action',
 	default: 'toggle',
 	choices: ON_OFF_TOGGLE_CHOICES,
+	disableAutoExpression: true,
 } as const
 
 const memoryOption = {
@@ -121,6 +129,7 @@ const apfSlotOption = {
 	label: 'Alignment APF',
 	default: '1',
 	choices: ALIGN_APF_CHOICES,
+	expressionDescription: 'APF number as text, 1 or 2',
 } as const
 
 const slotOption = {
@@ -593,7 +602,7 @@ export function UpdateActions(self: ModuleInstance): void {
 		measurement_find_delay: {
 			name: 'Measurement: find delay',
 			options: [engineOption, { type: 'checkbox', id: 'apply', label: 'Apply the delay found', default: true }],
-			callback: async ({ options }) => {
+			callback: async ({ options }, context) => {
 				const engine = Number(options.engine)
 				const response = await send('findDelay', `measurements/${engine}`, options.apply ? undefined : { apply: false })
 				if (!response) return
@@ -601,7 +610,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					// With Live TF running RiTA searches in the background and writes the result to delay.
 					const seconds = Number(response.estimatedSeconds)
 					self.log('info', `Engine ${engine}: searching delay with Live TF`)
-					await new Promise((resolve) => setTimeout(resolve, (seconds > 0 ? seconds : 3) * 1000 + 1000))
+					await wait((seconds > 0 ? seconds : 3) * 1000 + 1000, context.signal)
+					if (context.signal.aborted) throw new Error(`Engine ${engine}: the button was stopped`)
 					await self.refresh(`measurements/${engine}`, ['delay'])
 					self.log('info', `Engine ${engine} delay: ${self.state.measurements[engine]?.delay} ms`)
 					return
@@ -671,7 +681,14 @@ export function UpdateActions(self: ModuleInstance): void {
 			description:
 				'One of the 4 mute buttons of the external processor. Toggle does what the button in RiTA does: it unmutes the group when every channel is muted, and mutes it otherwise. The channels of each group are assigned in RiTA.',
 			options: [
-				{ type: 'dropdown', id: 'group', label: 'Mute group', default: '1', choices: MUTE_GROUP_CHOICES },
+				{
+					type: 'dropdown',
+					id: 'group',
+					label: 'Mute group',
+					default: '1',
+					choices: MUTE_GROUP_CHOICES,
+					expressionDescription: 'Mute group number as text, 1 to 8',
+				},
 				modeOption,
 			],
 			callback: async ({ options }) => {
@@ -703,11 +720,11 @@ export function UpdateActions(self: ModuleInstance): void {
 				'Exports the impulse response of the average to the Memory Bank folder, in the format chosen in RiTA. ' +
 				'Characters not allowed in file names become "-"; an empty name exports as AVG.',
 			options: [{ type: 'textinput', id: 'name', label: 'File name', default: 'AVG', useVariables: true }],
-			callback: async ({ options }) => {
+			callback: async ({ options }, context) => {
 				const response = await send('export', 'average', { name: String(options.name ?? '') })
 				if (!response) return
 				self.log('info', `Exporting AVG as "${response.name}" (${response.format}) to ${response.folder}`)
-				const status = await self.waitForExport(`AVG export "${response.name}"`)
+				const status = await self.waitForExport(`AVG export "${response.name}"`, context.signal)
 				if (status) self.log('info', `AVG exported as "${status.name || response.name}"`)
 				await self.refresh('average', AVERAGE_PROPS)
 			},
@@ -721,23 +738,19 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async () => {
 				const before = self.state.sync.syncCount
 				const response = await send('syncAll', 'measurements')
-				if (!asList(response?.measurements).length) return
+				// RiTA answers a one-engine list as the engine alone, so the list is made once here
+				// and used everywhere below.
+				const list = asList<any>(response?.measurements)
+				if (!list.length) return
 				// With a sync already in place RiTA does nothing and answers the same syncCount.
 				if (response.synced === true && before !== undefined && response.syncCount === before) {
 					self.log('warn', 'Sync all: a sync is already in place, clear it first with Measurement: clear find')
 					self.applyOverview(response)
 					return
 				}
-				for (const m of response.measurements) {
-					self.applyResponse(`measurements/${m.index}`, {
-						name: m.name,
-						active: m.active,
-						selected: m.selected,
-						delay: m.delay,
-						level: m.level,
-					})
-				}
-				const aligned = response.measurements.filter((m: any) => m.active).map((m: any) => `${m.name} ${m.delay} ms`)
+				// One pass for the eight engines, instead of rebuilding every variable eight times.
+				self.applyOverview(response, true)
+				const aligned = list.filter((m) => m.active).map((m) => `${m.name} ${m.delay} ms`)
 				self.log('info', `Sync all: ${aligned.length ? aligned.join(', ') : 'done'}`)
 			},
 		},
@@ -779,7 +792,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				'Export All of RiTA: exports the selected engines to the project folder, in the format chosen in RiTA. ' +
 				'With a Position set in RiTA, each file is named <engine>_<position>.',
 			options: [],
-			callback: async () => {
+			callback: async (_event, context) => {
 				const response = await send('exportAll', 'measurements')
 				if (!response) return
 				const engines = Array.isArray(response.measurements)
@@ -787,7 +800,7 @@ export function UpdateActions(self: ModuleInstance): void {
 					: `${response.measurements} engines`
 				const position = response.position ? `, position "${response.position}"` : ''
 				self.log('info', `Exporting ${engines} (${response.format}${position}) to ${response.folder}`)
-				if (await self.waitForExport('Export all')) self.log('info', 'Export all finished')
+				if (await self.waitForExport('Export all', context.signal)) self.log('info', 'Export all finished')
 			},
 		},
 
@@ -1100,17 +1113,10 @@ export function UpdateActions(self: ModuleInstance): void {
 		},
 	}
 
-	// Companion gives up on an action after a few seconds, but RiTA answers nothing while a
-	// one-pass measurement runs: actions return at once and finish in the background.
-	for (const definition of Object.values(actions)) {
-		if (!definition) continue
-		const run = definition.callback
-		definition.callback = (event, context) => {
-			void Promise.resolve(run(event, context)).catch((err: Error) => {
-				self.log('warn', `Action ${event.actionId} failed: ${err.message}`)
-			})
-		}
-	}
-
+	// Every callback is awaited by Companion, so a button that runs its actions one after
+	// another waits for each one: the capture does not start before the signal is set. What
+	// takes as long as the measurement is not the request, which RiTA answers at once with
+	// the time it will take, but the report afterwards, which runs on its own timer
+	// (afterCapture). Errors are already in the log, written by send with RiTA's reason.
 	self.setActionDefinitions(actions)
 }

@@ -1,4 +1,4 @@
-import type { SomeCompanionConfigField } from '@companion-module/base'
+import { Regex, type SomeCompanionConfigField } from '@companion-module/base'
 
 export type ModuleConfig = {
 	host: string
@@ -28,6 +28,10 @@ export function GetConfigFields(): SomeCompanionConfigField[] {
 			label: 'RiTA IP address',
 			width: 6,
 			default: '',
+			// The machine name is allowed as well as the address, but not a port after it: the
+			// port has its own field, and ws refuses an address that carries one.
+			regex: Regex.HOSTNAME,
+			tooltip: 'The address or the name of the machine running RiTA, with no port',
 		},
 		{
 			type: 'number',

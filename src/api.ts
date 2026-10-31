@@ -1,4 +1,4 @@
-import WebSocket from 'ws'
+import WebSocket, { type RawData } from 'ws'
 import { InstanceStatus, type LogLevel } from '@companion-module/base'
 import type { ModuleConfig, ModuleSecrets } from './config.js'
 
@@ -28,6 +28,23 @@ export interface ModuleInstanceLike {
 	onConnected(): void
 	onDisconnected(): void
 	onEvent(target: string, properties: Record<string, unknown>): void
+}
+
+/**
+ * A wait that ends early if Companion aborts the button it belongs to. Companion ignores
+ * whatever an aborted action throws, so the caller checks the signal afterwards and throws.
+ */
+export async function wait(ms: number, signal?: AbortSignal): Promise<void> {
+	if (signal?.aborted) return
+	return new Promise((resolve) => {
+		const done = (): void => {
+			clearTimeout(timer)
+			signal?.removeEventListener('abort', done)
+			resolve()
+		}
+		const timer = setTimeout(done, ms)
+		signal?.addEventListener('abort', done, { once: true })
+	})
 }
 
 export class RitaError extends Error {
@@ -63,6 +80,7 @@ export class RitaClient {
 	private login: Promise<void> | null = null
 	private loginRejected: string | null = null
 	private busyUntil = 0
+	private lastConnectError: string | null = null
 
 	constructor(private readonly module: ModuleInstanceLike) {}
 
@@ -111,14 +129,18 @@ export class RitaClient {
 		}
 	}
 
-	private authenticate(): Promise<void> {
+	private async authenticate(): Promise<void> {
 		const password = this.module.secrets.password
 		if (!password) {
 			this.module.updateStatus(InstanceStatus.AuthenticationFailure, 'RiTA requires a password')
-			return Promise.reject(new Error('RiTA requires a password, but none is configured'))
+			throw new Error('RiTA requires a password, but none is configured')
 		}
 		// RiTA locks the connection after 5 wrong passwords, so a rejected one is not retried.
-		if (this.loginRejected) return Promise.reject(new RitaError(this.loginRejected))
+		// The status is set again here because a reconnect in between turned it green.
+		if (this.loginRejected) {
+			this.module.updateStatus(InstanceStatus.AuthenticationFailure, this.loginRejected)
+			throw new RitaError(this.loginRejected)
+		}
 		this.login ??= this.request('set', 'session', { password })
 			.then(() => {
 				this.module.updateStatus(InstanceStatus.Ok)
@@ -136,10 +158,10 @@ export class RitaClient {
 		return this.login
 	}
 
-	private request(action: RitaAction, target?: string, properties?: unknown): Promise<any> {
+	private async request(action: RitaAction, target?: string, properties?: unknown): Promise<any> {
 		const ws = this.ws
 		if (!ws || ws.readyState !== WebSocket.OPEN) {
-			return Promise.reject(new Error('not connected to RiTA'))
+			throw new Error('not connected to RiTA')
 		}
 
 		const sequenceNumber = ++this.seq
@@ -173,25 +195,52 @@ export class RitaClient {
 		if (this.destroyed) return
 		const offset = this.portOffset
 		const port = (this.module.config.port || 26101) + offset
-		const url = `ws://${this.module.config.host}:${port}${API_PATH}`
+		// A pasted address often brings a space along, and a typed one sometimes the port; ws
+		// throws Invalid URL for either, which left the connection on Connecting for good.
+		const host = String(this.module.config.host ?? '').trim()
+		const url = `ws://${host}:${port}${API_PATH}`
 		this.module.updateStatus(InstanceStatus.Connecting)
 
-		const ws = new WebSocket(url, { handshakeTimeout: HANDSHAKE_TIMEOUT_MS })
+		let ws: WebSocket
+		try {
+			ws = new WebSocket(url, { handshakeTimeout: HANDSHAKE_TIMEOUT_MS })
+		} catch (err) {
+			this.module.updateStatus(InstanceStatus.BadConfig, `RiTA IP address is not usable: ${(err as Error).message}`)
+			this.module.log('error', `Cannot open ${url}: ${(err as Error).message}`)
+			return
+		}
 		this.ws = ws
 		let opened = false
 
 		ws.on('open', () => {
 			opened = true
 			this.lastGoodOffset = offset
+			this.lastConnectError = null
 			this.module.log('info', `Connected to ${url}`)
-			this.module.updateStatus(InstanceStatus.Ok)
+			// A password RiTA rejected is remembered until the settings are saved again, and no
+			// request will work, so the connection must not look healthy after a reconnect.
+			if (this.loginRejected) this.module.updateStatus(InstanceStatus.AuthenticationFailure, this.loginRejected)
+			else this.module.updateStatus(InstanceStatus.Ok)
 			this.module.onConnected()
 		})
 
-		ws.on('message', (data) => this.handleMessage(data.toString()))
+		// RiTA speaks JSON text; a binary frame is not ours. One arriving as several buffers, or
+		// as an ArrayBuffer, has to be joined, because toString on those gives [object ...].
+		ws.on('message', (data: RawData, isBinary: boolean) => {
+			if (isBinary) return
+			const text = Array.isArray(data)
+				? Buffer.concat(data).toString('utf8')
+				: data instanceof ArrayBuffer
+					? Buffer.from(data).toString('utf8')
+					: data.toString('utf8')
+			this.handleMessage(text)
+		})
 
 		ws.on('error', (err) => {
+			// Before the handshake, the error says what really happened (refused, unreachable,
+			// timed out); the close handler puts it in the status so the user can tell them apart.
 			if (opened) this.module.log('error', `WebSocket error: ${err.message}`)
+			else this.lastConnectError = err.message
 		})
 
 		ws.on('close', (code) => {
@@ -212,9 +261,10 @@ export class RitaClient {
 				this.module.updateStatus(InstanceStatus.Disconnected)
 				this.module.onDisconnected()
 			} else {
+				const why = this.lastConnectError ? `: ${this.lastConnectError}` : ''
 				this.module.updateStatus(
 					InstanceStatus.ConnectionFailure,
-					`No port in ${base}-${base + CONTROL_PORT_SPAN - 1} accepted the connection`,
+					`No port in ${base}-${base + CONTROL_PORT_SPAN - 1} accepted the connection${why}`,
 				)
 			}
 			this.scheduleReconnect()

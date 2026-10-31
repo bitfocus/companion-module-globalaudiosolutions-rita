@@ -7,7 +7,7 @@ import {
 	type SomeCompanionConfigField,
 } from '@companion-module/base'
 import { GetConfigFields, type ModuleConfig, type ModuleSecrets } from './config.js'
-import { RitaClient, RitaError, type ModuleInstanceLike } from './api.js'
+import { RitaClient, RitaError, wait, type ModuleInstanceLike } from './api.js'
 import {
 	ALIGN_APF_COUNT,
 	ALIGN_APF_PROPS,
@@ -30,8 +30,104 @@ import { UpdateFeedbacks } from './feedbacks.js'
 import { UpdateVariableDefinitions, UpdateVariableValues } from './variables.js'
 import { UpgradeScripts } from './upgrades.js'
 
-export type ActionsSchema = Record<string, CompanionActionSchemaWithoutResult<CompanionOptionValues>>
-export type FeedbacksSchema = Record<string, CompanionFeedbackSchema<CompanionOptionValues>>
+// The options of each action and each feedback, with the type Companion hands the callback:
+// a dropdown answers the id of the chosen entry, which in this module is always text (the
+// engine 1 is '1'), a text input answers text, a number field a number and a checkbox a
+// boolean. Writing them down is what makes the compiler catch a mistyped option id.
+/** A reply from RiTA: which fields it has depends on the target, so each one is checked as it is read. */
+export type RitaReply = Record<string, any>
+
+type Act<TOptions extends CompanionOptionValues> = CompanionActionSchemaWithoutResult<TOptions>
+type NoOptions = Record<string, never>
+
+export type ActionsSchema = {
+	generator_spectrum: Act<{ mode: string; engine: string }>
+	generator_signal: Act<{ signal: string }>
+	generator_gain: Act<{ gain: number }>
+	generator_duration: Act<{ duration: string }>
+	generator_outputs: Act<{ output1: number; output2: number }>
+	settings_dsp_type: Act<{ value: string }>
+	settings_dsp_model: Act<{ value: string; mode: string }>
+	settings_dsp_mode: Act<{ value: string }>
+	settings_fft_size_auto: Act<{ mode: string }>
+	settings_export_position: Act<{ value: string }>
+	settings_reference_mode: Act<{ value: string }>
+	settings_measurement_mode: Act<{ value: string }>
+	settings_fft_size: Act<{ value: string }>
+	settings_window: Act<{ value: string }>
+	settings_smoothing: Act<{ value: string }>
+	settings_spectrum_averages: Act<{ value: string }>
+	settings_averaging: Act<{ value: boolean }>
+	settings_sum: Act<{ value: boolean }>
+	settings_spectrum_plot: Act<{ value: string }>
+	settings_coherence_threshold: Act<{ value: number }>
+	measurement_capture: Act<{ engine: string }>
+	measurement_active: Act<{ engine: string; mode: string }>
+	measurement_find_delay: Act<{ engine: string; apply: boolean }>
+	measurement_delay: Act<{ engine: string; delay: number }>
+	measurement_inputs: Act<{ engine: string; measurementInput: number; referenceInput: number }>
+	measurement_name: Act<{ engine: string; name: string }>
+	measurement_sync_all: Act<NoOptions>
+	measurement_clear_find: Act<NoOptions>
+	measurement_clear_delays: Act<NoOptions>
+	measurement_clear_all: Act<NoOptions>
+	measurement_export_all: Act<NoOptions>
+	mute_group: Act<{ group: string; mode: string }>
+	average_active: Act<{ mode: string }>
+	average_export: Act<{ name: string }>
+	memory_capture: Act<{ engine: string }>
+	memory_visible: Act<{ memory: string; mode: string }>
+	memory_name: Act<{ memory: string; name: string }>
+	memory_delete: Act<{ memory: string }>
+	dsp_gain: Act<{ channel: string; gain: number }>
+	dsp_gain_step: Act<{ channel: string; step: number }>
+	dsp_delay: Act<{ channel: string; delay: number }>
+	dsp_polarity: Act<{ channel: string; mode: string }>
+	dsp_name: Act<{ channel: string; name: string }>
+	dsp_clear: Act<{ channel: string }>
+	dsp_peq: Act<{
+		channel: string
+		slot: number
+		enabled: boolean
+		filterType: string
+		frequency: number
+		gain: number
+		order: number
+		q: number
+	}>
+	dsp_peq_enabled: Act<{ channel: string; slot: number; mode: string }>
+	dsp_align_apf: Act<{
+		channel: string
+		slot: string
+		enabled: boolean
+		frequency: number
+		order: number
+		q: number
+	}>
+	dsp_align_apf_enabled: Act<{ channel: string; slot: string; mode: string }>
+	dsp_highpass: Act<{ channel: string; filterType: string; frequency: number; order: number; q: number }>
+	dsp_lowpass: Act<{ channel: string; filterType: string; frequency: number; order: number; q: number }>
+	raw_command: Act<{ action: string; target: string; properties: string }>
+}
+
+export type FeedbacksSchema = {
+	connected: CompanionFeedbackSchema<NoOptions>
+	generator_running: CompanionFeedbackSchema<NoOptions>
+	generator_signal: CompanionFeedbackSchema<{ signal: string }>
+	mute_group_muted: CompanionFeedbackSchema<{ group: string }>
+	mute_group_available: CompanionFeedbackSchema<{ group: string }>
+	average_active: CompanionFeedbackSchema<NoOptions>
+	average_has_data: CompanionFeedbackSchema<NoOptions>
+	settings_dsp_type: CompanionFeedbackSchema<{ value: string }>
+	settings_reference_mode: CompanionFeedbackSchema<{ value: string }>
+	settings_measurement_mode: CompanionFeedbackSchema<{ value: string }>
+	sync_active: CompanionFeedbackSchema<NoOptions>
+	sync_possible: CompanionFeedbackSchema<NoOptions>
+	measurement_active: CompanionFeedbackSchema<{ engine: string }>
+	measurement_selected: CompanionFeedbackSchema<{ engine: string }>
+	dsp_polarity: CompanionFeedbackSchema<{ channel: string }>
+	dsp_align_apf_enabled: CompanionFeedbackSchema<{ channel: string; slot: string }>
+}
 
 export type ModuleSchema = {
 	config: ModuleConfig
@@ -66,6 +162,8 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 	private pollTimer: NodeJS.Timeout | undefined
 	private levelTimer: NodeJS.Timeout | undefined
 	private resumeTimer: NodeJS.Timeout | undefined
+	// A settings save or a disabled connection must stop the waits that are still running.
+	private destroyed = false
 	private polling = false
 	private overviewPolling = false
 	private eventsSupported = false
@@ -91,8 +189,10 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 	}
 
 	async destroy(): Promise<void> {
+		this.destroyed = true
 		this.stopPolling()
 		if (this.resumeTimer) clearTimeout(this.resumeTimer)
+		this.resumeTimer = undefined
 		this.rita?.destroy()
 	}
 
@@ -265,6 +365,10 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 
 	private startClient(): void {
 		this.stopPolling()
+		// The capture that was running belongs to the old connection: its report would arrive
+		// on the new one, with the time of a measurement nobody is waiting for any more.
+		if (this.resumeTimer) clearTimeout(this.resumeTimer)
+		this.resumeTimer = undefined
 		this.rita?.destroy()
 		this.eventsSupported = false
 		this.optional = new Map()
@@ -413,9 +517,14 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 	}
 
 	/** Export is asynchronous: how it went shows up in exportStatus of the measurements object. */
-	async waitForExport(label: string): Promise<Record<string, any> | undefined> {
+	async waitForExport(label: string, signal?: AbortSignal): Promise<Record<string, any> | undefined> {
+		// The export belongs to this connection and to the button that asked for it: a settings
+		// save, a disabled connection or an aborted button stop the wait instead of asking on.
+		const client = this.rita
 		for (let i = 0; i < 120; i++) {
-			await new Promise((resolve) => setTimeout(resolve, 1000))
+			await wait(1000, signal)
+			if (this.destroyed || client !== this.rita) return undefined
+			if (signal?.aborted) throw new Error(`${label}: the button was stopped`)
 			let status: any
 			try {
 				status = (await this.rita.send('get', 'measurements'))?.exportStatus
@@ -477,8 +586,6 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		this.overviewPolling = true
 		try {
 			this.applyOverview(await this.rita.send('get', 'measurements'))
-			UpdateVariableValues(this)
-			this.checkAllFeedbacks()
 		} catch (err) {
 			this.log('debug', `Poll measurements: ${(err as Error).message}`)
 		} finally {
@@ -487,15 +594,20 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 	}
 
 	/** Message boxes RiTA would have shown: it answers instead of waiting for an OK, and says so here. */
-	logNotices(response: any): void {
+	logNotices(response: RitaReply | undefined): void {
 		for (const notice of asList<any>(response?.notices)) {
 			const answer = notice?.answer ? ` (answered ${notice.answer})` : ''
 			this.log('warn', `RiTA: ${notice?.title ?? ''} ${notice?.message ?? ''}${answer}`.trim())
 		}
 	}
 
-	/** The measurements list, as answered by get and by syncAll, clearFind, clearDelays and clearAll. */
-	applyOverview(overview: any): void {
+	/**
+	 * The measurements list, as answered by get and by syncAll, clearFind, clearDelays and
+	 * clearAll. One pass for the eight engines, and one refresh of the variables and feedbacks
+	 * at the end. With ownRequest the caller writes its own log line, so a sync that grew
+	 * because of this module is not announced as something that happened in RiTA.
+	 */
+	applyOverview(overview: RitaReply | undefined, ownRequest = false): void {
 		if (!overview || typeof overview !== 'object') return
 		{
 			for (const engine of asList<any>(overview.measurements)) {
@@ -516,7 +628,11 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		if (typeof overview.syncCount === 'number') {
 			const previous = this.state.sync.syncCount
 			this.state.sync.syncCount = overview.syncCount
-			if (previous !== undefined && overview.syncCount > previous) this.log('info', 'Sync All done in RiTA')
+			if (!ownRequest && previous !== undefined && overview.syncCount > previous) {
+				this.log('info', 'Sync All done in RiTA')
+			}
 		}
+		UpdateVariableValues(this)
+		this.checkAllFeedbacks()
 	}
 }

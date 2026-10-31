@@ -1,23 +1,24 @@
 # companion-module-globalaudiosolutions-rita
 
-Módulo de [Bitfocus Companion](https://bitfocus.io/companion) para controlar RiTA (Global Audio Solutions) a través de su API WebSocket v1.
+[Bitfocus Companion](https://bitfocus.io/companion) module to control RiTA (Global Audio Solutions) through its
+WebSocket API v1.
 
-La ayuda para el usuario de Companion está en [companion/HELP.md](companion/HELP.md).
+The help for Companion users is in [companion/HELP.md](companion/HELP.md).
 
-## Requisitos
+## Requirements
 
-- **RiTA 2.8.0 o posterior**, con la API arrancada. El módulo sigue `sdk/referencia.md` de RiTA.
-- **Companion 4.3 o posterior**, porque está hecho con `@companion-module/base` 2.x.
+- **RiTA 2.8.0 or later**, with its API started. The module follows RiTA's own API reference.
+- **Companion 5.0 or later**, because it is built with `@companion-module/base` 2.1 (module API 2.1).
 
-## Instalar en Companion
+## Installing in Companion
 
-1. En Companion, pestaña **Modules** → **Import module package**.
-2. Elegir `globalaudiosolutions-rita-<versión>.tgz`.
-3. Pestaña **Connections** → buscar **RiTA** → **Add**.
+1. In Companion, **Modules** tab → **Import module package**.
+2. Choose `globalaudiosolutions-rita-<version>.tgz`.
+3. **Connections** tab → look for **RiTA** → **Add**.
 
-## Generar el paquete
+## Building the package
 
-Requiere Node.js 22 y yarn 4 (con `corepack enable`, o `corepack yarn ...` sin permisos de administrador).
+Needs Node.js 26 and yarn 4 (`corepack enable`, or `corepack yarn ...` without administrator rights).
 
 ```bash
 yarn install
@@ -27,24 +28,26 @@ yarn install
 yarn package
 ```
 
-Deja `globalaudiosolutions-rita-<versión>.tgz` en esta carpeta. La versión sale de `package.json`.
+That leaves `globalaudiosolutions-rita-<version>.tgz` in this folder, with the version taken from `package.json`.
 
-Sin RiTA a mano, se puede levantar el servidor de pruebas en MATLAB:
+Other scripts: `yarn build` compiles to `dist`, `yarn lint` runs ESLint and `yarn format` runs Prettier.
+
+With no RiTA at hand, its test server can be started from MATLAB:
 
 ```matlab
-addpath(genpath('<ruta>\RiTA_Matlab\software'))
+addpath(genpath('<path>\RiTA_Matlab\software'))
 rapiStreamDemo(26101, 3600)
 ```
 
-## Estructura
+## Structure
 
-| Fichero            | Contenido                                                                     |
-| ------------------ | ----------------------------------------------------------------------------- |
-| `src/index.ts`     | Instancia del módulo, ciclo de vida y sondeo de estado                        |
-| `src/api.ts`       | Cliente WebSocket: grupo de puertos, `sequenceNumber`, contraseña, reconexión |
-| `src/actions.ts`   | Acciones                                                                      |
-| `src/feedbacks.ts` | Feedbacks                                                                     |
-| `src/variables.ts` | Variables                                                                     |
-| `src/choices.ts`   | Listas de valores permitidos, copiadas de la referencia                       |
-| `src/state.ts`     | Estado en caché                                                               |
-| `src/upgrades.ts`  | Scripts de actualización de configuraciones antiguas                          |
+| File               | Contents                                                               |
+| ------------------ | ---------------------------------------------------------------------- |
+| `src/index.ts`     | The module instance, its lifecycle and the state polling               |
+| `src/api.ts`       | WebSocket client: port group, `sequenceNumber`, password, reconnection |
+| `src/actions.ts`   | Actions                                                                |
+| `src/feedbacks.ts` | Feedbacks                                                              |
+| `src/variables.ts` | Variables                                                              |
+| `src/choices.ts`   | The values RiTA accepts, copied from its reference                     |
+| `src/state.ts`     | The cached state                                                       |
+| `src/upgrades.ts`  | Upgrade scripts for configurations of earlier versions                 |

@@ -6,7 +6,7 @@ Requires **RiTA 2.8.0 or later**. With an older RiTA the module still connects a
 
 ### Configuration
 
-- **RiTA IP address**: the machine running RiTA with the API enabled.
+- **RiTA IP address**: the address, or the name, of the machine running RiTA with the API enabled. Without the port: that one has its own field, and an address carrying it is refused by the field itself.
 - **Control port**: 26101 by default. RiTA serves one client per port, so the module tries this port and the next four.
 - **Password**: only if the API password is enabled in RiTA. If it is changed in RiTA while connected, the module logs in again on its own (within 30 s). A wrong password is not retried until the configuration is saved again, because RiTA locks the connection after 5 attempts.
 - **Level meter poll interval**: RiTA sends an event whenever something the module shows changes, except the engine level meters, which are read at this interval. On an older RiTA without events, everything is read at this interval.
@@ -21,6 +21,10 @@ Requires **RiTA 2.8.0 or later**. With an older RiTA the module still connects a
 - **Mute group**: mute, unmute or toggle one of the 4 mute buttons of the external processor.
 - **DSP**: channel gain (absolute or step), delay, polarity, name, clear, EQ filter (1-20) and its on/off, alignment APF (1-2) and its on/off, high-pass and low-pass.
 - **Advanced: send API command**: any request with a JSON properties field, for objects not covered above.
+
+Every action waits for RiTA's answer, so a button whose actions run one after another does them in that order: the signal is set before the capture that uses it starts. A capture is the one thing that does not hold the button, because RiTA answers it at once with how long it will take and the module reports the result when that time is up. **Measurement: export all**, **AVG: export impulse** and **Measurement: find delay** with Live TF can take a while, and stopping the button's actions in Companion stops their wait too.
+
+The **On / Off / Toggle** field of an action is a choice, not something to compute, so it has no expression mode: use two buttons, or On and Off in the same one. The **Engine**, **Channel**, **Mute group** and **Alignment APF** dropdowns do take an expression, as long as what it gives is the number written as text, `1` and not `1.0`; anything else is not in the list and Companion skips the action without saying why.
 
 When RiTA would have shown a message box, it answers anyway and puts the text in the reply; the module writes those to the log as "RiTA: …". Warnings and errors reported by a capture or an export show up there too.
 

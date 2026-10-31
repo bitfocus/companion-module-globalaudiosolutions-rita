@@ -2,7 +2,7 @@
 	"$schema": "../node_modules/@companion-module/base/assets/manifest.schema.json",
 	"type": "connection",
 	"id": "globalaudiosolutions-rita",
-	"name": "globalaudiosolutions-rita",
+	"name": "Global Audio Solutions: RiTA",
 	"shortname": "rita",
 	"description": "Control RiTA (Global Audio Solutions): generator, measurement engines, memories and globalDSP",
 	"version": "0.0.0",
