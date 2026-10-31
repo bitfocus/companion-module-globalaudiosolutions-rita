@@ -2,6 +2,10 @@ import type { CompanionVariableDefinitions, CompanionVariableValues } from '@com
 import type ModuleInstance from './index.js'
 import { ALIGN_APF_COUNT, CHANNEL_COUNT, ENGINE_COUNT, MUTE_GROUP_COUNT, asList } from './state.js'
 
+/** Seconds as a button can read them, three decimals and no trailing zeros. */
+const seconds = (value: number | undefined): string | number =>
+	value === undefined || !Number.isFinite(Number(value)) ? '' : Number(Number(value).toFixed(3))
+
 const onOff = (value: boolean | undefined, on: string, off: string): string =>
 	value === undefined ? '' : value ? on : off
 
@@ -26,6 +30,7 @@ export function UpdateVariableDefinitions(self: ModuleInstance): void {
 		settings_fft_size_auto: { name: 'Auto FFT size on' },
 		settings_engine_samples: { name: 'Engine size (samples)' },
 		settings_time_constant: { name: 'Engine size (s)' },
+		settings_sample_rate: { name: 'Sample rate (Hz)' },
 		settings_reference_mode: { name: 'Reference mode' },
 		settings_measurement_mode: { name: 'Measurement mode' },
 		settings_fft_size: { name: 'FFT size' },
@@ -87,7 +92,9 @@ export function UpdateVariableValues(self: ModuleInstance): void {
 		settings_export_position: self.state.settings.exportPosition ?? '',
 		settings_fft_size_auto: onOff(self.state.settings.fftSizeAuto, 'ON', 'OFF'),
 		settings_engine_samples: self.state.settings.engineSamples ?? '',
-		settings_time_constant: self.state.settings.timeConstant ?? '',
+		// RiTA sends it as engineSamples/sampleRate: 1.3653333333333333 and the like.
+		settings_time_constant: seconds(self.state.settings.timeConstant),
+		settings_sample_rate: self.state.settings.sampleRate ?? '',
 		settings_reference_mode: self.state.settings.referenceMode ?? '',
 		settings_measurement_mode: self.state.settings.measurementMode ?? '',
 		settings_fft_size: self.state.settings.fftSize ?? '',

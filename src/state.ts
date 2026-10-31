@@ -54,6 +54,8 @@ export interface SettingsState {
 	// Read only: the samples each engine keeps, and that length in seconds.
 	engineSamples?: number
 	timeConstant?: number
+	// Read only: the sample rate, which is what turns those samples into seconds.
+	sampleRate?: number
 	fftSize?: string
 	window?: string
 	smoothing?: string
@@ -128,6 +130,7 @@ export const OPTIONAL_SETTINGS_LABELS: Record<string, string> = {
 // RiTA changes fftSize on its own when Live TF starts with smoothing on, so it is followed, never restored.
 export const SETTINGS_PROPS = [
 	'fftSize',
+	'sampleRate',
 	'window',
 	'smoothing',
 	'spectrumAverages',

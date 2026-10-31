@@ -192,7 +192,8 @@ export function UpdateActions(self: ModuleInstance): void {
 	// Spectrum and Live TF answer continuous:true and keep running until the generator is stopped.
 	const capture = async (engine: number): Promise<void> => {
 		const response = await send('capture', `measurements/${engine}`, undefined, {
-			'generator running': 'a continuous measurement is running: stop it first with Generator: Spectrum on / off',
+			'generator running':
+				'a continuous measurement is running: stop it first with Generator: Spectrum on / off, or by choosing another signal, which stops it from RiTA 2.8.1 beta 03 on',
 		})
 		if (!response) return
 		if (response.continuous) {
@@ -260,6 +261,9 @@ export function UpdateActions(self: ModuleInstance): void {
 		},
 		generator_signal: {
 			name: 'Generator: set signal',
+			description:
+				'From RiTA 2.8.1 beta 03, choosing another signal while Spectrum is running stops it, so the next capture ' +
+				'measures. RiTA takes about a second and a half to stop, and the module shows it the moment it does.',
 			options: [{ type: 'dropdown', id: 'signal', label: 'Signal', default: 'Sweep', choices: SIGNAL_CHOICES }],
 			callback: async ({ options }) => {
 				if (await send('set', 'generator', { signal: options.signal })) await self.refreshSettings()
@@ -385,7 +389,8 @@ export function UpdateActions(self: ModuleInstance): void {
 			description:
 				'The Normal / Auto FFT Size switch of Preferences. On, each engine keeps the next power of two above the sweep ' +
 				'length, from 65536 to 262144 samples, the FFT size list gains those sizes and 128 FPPO, and the channel delay ' +
-				'reaches 680 ms for every 32768 samples (5440 at 262144). Off, each engine goes back to 32768 and the ' +
+				'reaches as far as the engine lasts: 680 ms for every 32768 samples at 48 kHz (5440 with 262144), ' +
+				'half of that at 96 kHz. Off, each engine goes back to 32768 and the ' +
 				'measurements are cut to it. RiTA says in the log what it had to change. Needs RiTA 2.8.1 or later.',
 			options: [modeOption],
 			callback: async ({ options }) => {
@@ -795,7 +800,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				{
 					type: 'number',
 					id: 'delay',
-					label: 'Delay (ms). Over 680 needs Auto FFT size, and 680 more per 32768 samples',
+					label: 'Delay (ms). Over 680 needs Auto FFT size; then it reaches the engine length, half as far at 96 kHz',
 					default: 0,
 					min: 0,
 					max: 5440,

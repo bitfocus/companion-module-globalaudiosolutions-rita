@@ -24,7 +24,7 @@ Requires **RiTA 2.8.0 or later**. With an older RiTA the module still connects a
 
 When RiTA would have shown a message box, it answers anyway and puts the text in the reply; the module writes those to the log as "RiTA: …". Warnings and errors reported by a capture or an export show up there too.
 
-**Capture** measures on an engine with the current signal, and turns the engine on. While a continuous measurement (Spectrum) is running, a one-shot capture is refused: stop it first with **Generator: Spectrum on / off**.
+**Capture** measures on an engine with the current signal, and turns the engine on. While a continuous measurement (Spectrum) is running, a one-shot capture is refused: stop it first with **Generator: Spectrum on / off**, or with **Generator: set signal**, since from RiTA 2.8.1 beta 03 choosing another signal stops the Spectrum that was running (it takes RiTA about a second and a half, and `$(rita:generator_running)` goes to OFF on its own when it does). On an earlier RiTA the signal changes and Spectrum keeps running out of sight.
 - With Sweep, Multi Sweep, Pink or External it measures once. RiTA does not answer anything while it measures; the module waits for the estimated duration and then writes the result (or the error RiTA reports) to the log.
 - With Spectrum it starts measuring continuously on that engine (or adds the engine if it is already running) until the generator is stopped. RiTA keeps answering while it runs.
 
@@ -32,7 +32,7 @@ When RiTA would have shown a message box, it answers anyway and puts the text in
 
 From RiTA 2.8.1 the **Spectrum** signal has no `64 FPPO` FFT size, nor `128 FPPO` or `65536`: choosing Spectrum moves the size to 32768 on its own, writing one of those while it is selected is refused, and leaving Spectrum brings the size back. The module reads the settings again after every change of signal, so what the buttons show is what RiTA has.
 
-**Settings: Auto FFT size on / off** is the Normal / Auto FFT Size switch of Preferences, off by default. With it on, each engine keeps the next power of two above the length of the sweep, from 65536 to 262144 samples, so a longer sweep gives a longer engine: `$(rita:settings_engine_samples)` is that size in samples and `$(rita:settings_time_constant)` the same thing in seconds. The FFT size list then also offers those sizes and `128 FPPO`, and the delay of a DSP channel reaches 680 ms for every 32768 samples, up to 5440. Off, each engine goes back to 32768 and the measurements are cut to it, with RiTA saying so in the log.
+**Settings: Auto FFT size on / off** is the Normal / Auto FFT Size switch of Preferences, off by default. With it on, each engine keeps the next power of two above the length of the sweep, from 65536 to 262144 samples, so a longer sweep gives a longer engine: `$(rita:settings_engine_samples)` is that size in samples and `$(rita:settings_time_constant)` the same thing in seconds, which depends on `$(rita:settings_sample_rate)`. The FFT size list then also offers those sizes and `128 FPPO`, and the delay of a DSP channel reaches as far as the engine lasts, that same number of seconds: 680 ms for every 32768 samples at 48 kHz (5440 with 262144), half of that at 96 kHz. Off, each engine goes back to 32768 and the measurements are cut to it, with RiTA saying so in the log.
 
 Because the engine follows the sweep, **Generator: set duration** changes the engine size too, and the module reads the settings again after it. `$(rita:settings_fft_size_auto)` says whether the switch is on.
 
@@ -101,7 +101,7 @@ Connected, Mute group is muted, Mute group has channels, Sync All is set, Sync A
 ### Variables
 
 - `$(rita:generator_running)`, `generator_signal`, `generator_gain`, `generator_duration`, `generator_output1`, `generator_output2`
-- `$(rita:settings_fft_size)`, `settings_window`, `settings_smoothing`, `settings_spectrum_averages`, `settings_averaging`, `settings_sum`, `settings_coherence_threshold`, `settings_dsp_type`, `settings_dsp_model`, `settings_dsp_mode`, `settings_fft_size_auto`, `settings_engine_samples`, `settings_time_constant`, `settings_reference_mode`, `settings_measurement_mode`
+- `$(rita:settings_fft_size)`, `settings_window`, `settings_smoothing`, `settings_spectrum_averages`, `settings_averaging`, `settings_sum`, `settings_coherence_threshold`, `settings_dsp_type`, `settings_dsp_model`, `settings_dsp_mode`, `settings_fft_size_auto`, `settings_engine_samples`, `settings_time_constant`, `settings_sample_rate`, `settings_reference_mode`, `settings_measurement_mode`
 - `$(rita:sync_active)`, `sync_count`, `sync_possible`
 - `$(rita:mute_group_N_name)`, `mute_group_N_muted`, `mute_group_N_available` for N = 1..4
 - `$(rita:average_active)`, `average_has_data`, `average_count`, `average_engines`, `average_mode`, `average_name`
