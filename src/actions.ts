@@ -687,7 +687,7 @@ export function UpdateActions(self: ModuleInstance): void {
 					label: 'Mute group',
 					default: '1',
 					choices: MUTE_GROUP_CHOICES,
-					expressionDescription: 'Mute group number as text, 1 to 8',
+					expressionDescription: 'Mute group number as text, 1 to 4',
 				},
 				modeOption,
 			],

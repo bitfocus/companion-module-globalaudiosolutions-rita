@@ -27,6 +27,7 @@ import {
 } from './state.js'
 import { UpdateActions } from './actions.js'
 import { UpdateFeedbacks } from './feedbacks.js'
+import { UpdatePresets } from './presets.js'
 import { UpdateVariableDefinitions, UpdateVariableValues } from './variables.js'
 import { UpgradeScripts } from './upgrades.js'
 
@@ -185,6 +186,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 		UpdateActions(this)
 		UpdateFeedbacks(this)
 		UpdateVariableDefinitions(this)
+		UpdatePresets(this)
 		this.startClient()
 	}
 
