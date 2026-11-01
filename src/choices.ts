@@ -77,16 +77,19 @@ export const REFERENCE_MODE_CHOICES = same(['1 Ref. Channel', 'Several Ref. Chan
 export const MEASUREMENT_MODE_CHOICES = same(['1 Meas. Channel', 'Several Meas. Channels'])
 
 // The filter types of RiTA's Equalizer window, copied from RiTA's own table (TiposEQRiTA),
-// with the columns each one uses. With RiTA, Kingray and Galaxy only Parametric, Low Shelf,
-// High Shelf, APF and FIR RevPhase exist; a Marani adds the rest, and which of them depends
-// on its model and mode, so one RiTA does not have can answer "unknown value".
+// with the columns each one uses. With RiTA and Kingray only Parametric, Low Shelf,
+// High Shelf, APF and FIR RevPhase exist; from RiTA 2.8.1 a Galaxy has Parametric, U-Shaping
+// and APF, each one in its own fixed row (GALAXY_US_BAND_5); a Marani adds the rest, and
+// which of them depends on its model and mode, so one RiTA does not have can answer
+// "unknown value".
 export interface PeqType {
 	id: string
 	// Whether the G/O column is a gain. On APF and FIR RevPhase it is the order instead.
 	gain: boolean
 	// What the Q column means: a width, the slope in dB/oct of the Slope shelvings,
-	// the order of APF and FIR RevPhase, or nothing at all.
-	width: 'q' | 'slope' | 'order' | 'none'
+	// the order of APF and FIR RevPhase, the order of a U-Shaping band (which has no Q at
+	// all), or nothing at all.
+	width: 'q' | 'slope' | 'order' | 'ushaping' | 'none'
 }
 export const PEQ_TYPES: PeqType[] = [
 	{ id: 'Parametric', gain: true, width: 'q' },
@@ -110,9 +113,18 @@ export const PEQ_TYPES: PeqType[] = [
 	{ id: 'Notch', gain: false, width: 'q' },
 	{ id: 'APF', gain: false, width: 'order' },
 	{ id: 'FIR RevPhase', gain: false, width: 'order' },
+	// Only with DSP type Galaxy. Its Q column is the order of the band, and each step of it
+	// is 6 dB/oct; the band has no Q, so writing one answers "unknown value".
+	{ id: 'U-Shaping', gain: true, width: 'ushaping' },
 ]
 export const PEQ_TYPE_CHOICES: Choice[] = PEQ_TYPES.map((t) => ({ id: t.id, label: t.id }))
 export const peqType = (id: string): PeqType | undefined => PEQ_TYPES.find((t) => t.id === id)
+
+// With DSP type Galaxy the filters of an output are fixed (RepartoGalaxyEQ): 1 to 10
+// Parametric, 11 to 15 the five U-Shaping bands and 16 the all-pass, and the number of bands
+// cannot be changed either. The fifth band, filter 15, only takes the gain: the Galaxy has
+// neither a fifth cut nor a fifth slope, so its frequency and its order are read only.
+export const GALAXY_US_BAND_5 = 15
 
 // NXF is the crossover of some Marani models and modes; with the rest it answers
 // "unknown value". Its order is not dB/oct but an attenuation code, see HELP.md.

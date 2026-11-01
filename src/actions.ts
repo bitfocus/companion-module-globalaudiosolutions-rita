@@ -12,6 +12,7 @@ import {
 	MUTE_GROUP_CHOICES,
 	ENGINE_CHOICES,
 	FFT_SIZE_CHOICES,
+	GALAXY_US_BAND_5,
 	MEASUREMENT_MODE_CHOICES,
 	ON_OFF_TOGGLE_CHOICES,
 	PEQ_TYPE_CHOICES,
@@ -186,18 +187,32 @@ export function UpdateActions(self: ModuleInstance): void {
 				return undefined
 			}
 			if (err instanceof RitaError && err.code === 'read only' && target?.startsWith('dsp/out/')) {
-				// Since RiTA 2.8.1 each channel has a number of bands in use (the Bands dropdown of the
-				// Equalizer window): a filter above it cannot be switched on, and RiTA answers the same
-				// code as a linked channel. The band count cannot be read, so both causes are named.
+				// A filter can be refused for several reasons that all answer this same code, and none
+				// of them can be read back from RiTA, so the ones that fit the request are all named.
+				// The request is refused whole: nothing of it is applied.
 				const slot = target.match(/^dsp\/out\/\d+\/peq\/(\d+)$/)
 				const props = properties as Record<string, unknown> | undefined
-				// Only switching a filter ON hits the band limit; switching it off never does.
-				if (slot && props && typeof props === 'object' && props.enabled === true) {
-					self.log(
-						'warn',
-						`${target}: filter ${slot[1]} could not be switched. Either it is above the bands in use for that ` +
-							'channel in RiTA (Equalizer window, Bands), or the EQ of the channel is linked to another one',
-					)
+				if (slot && props && typeof props === 'object') {
+					const causes = []
+					// Since RiTA 2.8.1 each channel has a number of bands in use (the Bands dropdown of
+					// the Equalizer window): a filter above it cannot be switched on. Only switching a
+					// filter ON hits that limit; switching it off never does.
+					if (props.enabled === true) {
+						causes.push('it is above the bands in use for that channel in RiTA (Equalizer window, Bands)')
+					}
+					// With DSP type Galaxy every filter has its own fixed type, and the fifth U-Shaping
+					// band has neither a cut nor a slope. Only a Galaxy refuses for these two, and a
+					// RiTA with no DSP Type at all cannot be one.
+					if (self.state.settings.dspType === 'Galaxy') {
+						if (props.type !== undefined) {
+							causes.push('each filter of a Galaxy has a fixed type and that is not the type of this one')
+						}
+						if (props.frequency !== undefined || props.order !== undefined) {
+							causes.push('the fifth U-Shaping band only takes the gain')
+						}
+					}
+					causes.push('the EQ of the channel is linked to another one in RiTA')
+					self.log('warn', `${target}: filter ${slot[1]} was refused. Either ${causes.join(', or ')}`)
 					return undefined
 				}
 				self.log('warn', `${target}: read only, this part of the channel is linked to another one in RiTA`)
@@ -940,7 +955,9 @@ export function UpdateActions(self: ModuleInstance): void {
 			description:
 				'One of the 20 filters of the Equalizer window. A filter that is not enabled is stored but does not sound. ' +
 				'Each type uses only some of the fields, and only the ones it uses are sent: the rest are left alone. With a ' +
-				'Marani, which types exist depends on its model and mode, and one it does not have answers "unknown value".',
+				'Marani, which types exist depends on its model and mode, and one it does not have answers "unknown value". ' +
+				'With a Galaxy there are 16 filters and each one has a fixed type: 1 to 10 Parametric, 11 to 15 the five ' +
+				'U-Shaping bands and 16 the APF. Writing another type on a filter is refused.',
 			options: [
 				channelOption,
 				slotOption,
@@ -952,26 +969,42 @@ export function UpdateActions(self: ModuleInstance): void {
 					default: 'Parametric',
 					choices: PEQ_TYPE_CHOICES,
 					allowCustom: true,
-					tooltip: 'Only Parametric, Low Shelf, High Shelf, APF and FIR RevPhase exist with DSP type RiTA',
+					tooltip:
+						'Only Parametric, Low Shelf, High Shelf, APF and FIR RevPhase exist with DSP type RiTA; with a ' +
+						'Galaxy, only Parametric, U-Shaping and APF, each one in its own filters',
 				},
-				{ type: 'number', id: 'frequency', label: 'Frequency (Hz)', default: 1000, min: 20, max: 20000 },
+				{
+					type: 'number',
+					id: 'frequency',
+					label: 'Frequency (Hz)',
+					default: 1000,
+					min: 20,
+					max: 20000,
+					tooltip:
+						'A U-Shaping band takes less: 20 to 2500 Hz on band 1, 40 to 5000 on band 2, 80 to 10000 on band 3 ' +
+						'and 160 to 20000 on band 4. Band 5 has no frequency',
+				},
 				{
 					type: 'number',
 					id: 'gain',
-					label: 'Gain (dB), bells and shelvings only',
+					label: 'Gain (dB), bells, shelvings and U-Shaping bands',
 					default: 0,
 					min: -20,
 					max: 20,
 					step: 0.1,
+					tooltip: 'A U-Shaping band takes 15 dB either way',
 				},
 				{
 					type: 'number',
 					id: 'order',
-					label: 'Order, APF and FIR RevPhase only',
+					label: 'Order: APF, FIR RevPhase and U-Shaping bands only',
 					default: 1,
 					min: 1,
-					max: 2,
+					max: 8,
 					asInteger: true,
+					tooltip:
+						'APF and FIR RevPhase take 1 or 2, and a Galaxy APF is always 2. On a U-Shaping band the order is ' +
+						'its slope, 6 dB/oct per step: 1 to 8 on bands 1 and 2, 1 to 6 on bands 3 and 4. Band 5 has no order',
 				},
 				{
 					type: 'number',
@@ -986,18 +1019,24 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async ({ options }) => {
 				const type = String(options.filterType)
 				const info = peqType(type)
+				const slot = Number(options.slot)
+				// The fifth U-Shaping band of a Galaxy, filter 15, only takes the gain: writing its
+				// frequency or its order is read only and the whole request would be refused.
+				const bandFive = info?.width === 'ushaping' && slot === GALAXY_US_BAND_5
 				const properties: Record<string, unknown> = {
 					type,
 					enabled: options.enabled !== false,
-					frequency: Number(options.frequency),
 				}
-				// Only the fields that type uses: a cut has no gain, and only the all-pass and the
-				// FIR RevPhase have an order. A type this module does not know (a newer RiTA) gets
-				// the usual pair, gain and Q.
+				if (!bandFive) properties.frequency = Number(options.frequency)
+				// Only the fields that type uses: a cut has no gain, and only the all-pass, the FIR
+				// RevPhase and the U-Shaping bands have an order. A U-Shaping band has no Q at all. A
+				// type this module does not know (a newer RiTA) gets the usual pair, gain and Q.
 				if (!info || info.gain) properties.gain = Number(options.gain)
-				if (info?.width === 'order') properties.order = Number(options.order)
+				if ((info?.width === 'order' || info?.width === 'ushaping') && !bandFive) {
+					properties.order = Number(options.order)
+				}
 				if (!info || info.width === 'q' || info.width === 'slope') properties.q = Number(options.q)
-				await send('set', `dsp/out/${options.channel}/peq/${Number(options.slot)}`, properties)
+				await send('set', `dsp/out/${options.channel}/peq/${slot}`, properties)
 			},
 		},
 		dsp_peq_enabled: {
@@ -1023,7 +1062,18 @@ export function UpdateActions(self: ModuleInstance): void {
 				apfSlotOption,
 				{ type: 'checkbox', id: 'enabled', label: 'Enabled', default: true },
 				{ type: 'number', id: 'frequency', label: 'Frequency (Hz)', default: 1000, min: 20, max: 20000 },
-				{ type: 'number', id: 'order', label: 'Order', default: 2, min: 1, max: 2, asInteger: true },
+				{
+					type: 'number',
+					id: 'order',
+					label: 'Order',
+					default: 2,
+					min: 1,
+					max: 2,
+					asInteger: true,
+					// The Galaxy all-pass is second order, so from RiTA 2.8.1 a 1 is not refused:
+					// it is stored as a 2, which is what the reply and the variable then say.
+					tooltip: 'With DSP type Galaxy an all-pass is always order 2: a 1 is stored as a 2',
+				},
 				{ type: 'number', id: 'q', label: 'Q', default: 0.7, min: 0.1, max: 10, step: 0.01 },
 			],
 			callback: async ({ options }) => {
