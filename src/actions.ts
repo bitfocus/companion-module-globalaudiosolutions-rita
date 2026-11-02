@@ -246,13 +246,13 @@ export function UpdateActions(self: ModuleInstance): void {
 			'signal, the gain and the duration have to wait until it finishes. Spectrum does not block them',
 	}
 
-	// The signal list is RiTA's own dropdown (SenalesGeneradorRiTA), and on a RiTA newer than
-	// 2.8.1 it follows Preferences > Transfer: Single Channel measures without a reference input,
-	// so External, which needs one, is not in the list there and is refused.
+	// The signal list is RiTA's own dropdown (SenalesGeneradorRiTA), and from RiTA 2.8.2 it
+	// follows Preferences > Transfer: Single Channel measures without a reference input, so
+	// External, which needs one, is not in the list there and is refused.
 	const signalHints = {
 		...generatorBusy,
 		'unknown value':
-			'RiTA is not offering that signal and changed nothing: on a RiTA newer than 2.8.1, External is only in ' +
+			'RiTA is not offering that signal and changed nothing: from RiTA 2.8.2, External is only in ' +
 			'the list with Dual Channel in Preferences > Transfer, because it needs the reference input that Single ' +
 			'Channel does not use',
 	}
@@ -334,7 +334,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				'From RiTA 2.8.1, choosing another signal while Spectrum is running stops it, so the next ' +
 				'capture measures. RiTA takes about a second and a half to stop, and the module shows it the moment it does. A ' +
 				'single measurement, on the other hand, is not interrupted: that same RiTA refuses the signal and changes ' +
-				'nothing while it runs, and the log says so. On a RiTA newer than 2.8.1, External needs Dual Channel in ' +
+				'nothing while it runs, and the log says so. From RiTA 2.8.2, External needs Dual Channel in ' +
 				'Preferences > Transfer: with Single Channel it is not in the list RiTA offers, and it is refused.',
 			options: [
 				{
