@@ -47,6 +47,9 @@ export interface SettingsState {
 	dspMode?: string | null
 	referenceMode?: string
 	measurementMode?: string
+	// Read only: 'Single Channel' or 'Dual Channel', the Transfer mode of Preferences. With
+	// Single Channel there is no reference input, so the generator does not offer External.
+	transferMode?: string
 	// From RiTA 2.8.1 the position of the exported files lives only in the API.
 	exportPosition?: string
 	// Auto FFT size: each engine keeps the next power of 2 above the sweep, 65536 to 262144.
@@ -110,6 +113,7 @@ export const OPTIONAL_SETTINGS_PROPS = [
 	'dspMode',
 	'referenceMode',
 	'measurementMode',
+	'transferMode',
 	'exportPosition',
 	'fftSizeAuto',
 	'engineSamples',
@@ -121,11 +125,14 @@ export const OPTIONAL_SETTINGS_LABELS: Record<string, string> = {
 	dspMode: 'DSP mode',
 	referenceMode: 'reference mode',
 	measurementMode: 'measurement mode',
+	transferMode: 'transfer mode',
 	exportPosition: 'export position',
 	fftSizeAuto: 'Auto FFT size',
 	engineSamples: 'engine size',
 	timeConstant: 'time constant',
 }
+// The ones RiTA only lets a client read: there is no action to refuse, just an empty variable.
+export const READ_ONLY_SETTINGS_PROPS = ['engineSamples', 'timeConstant', 'transferMode']
 
 // RiTA changes fftSize on its own when Live TF starts with smoothing on, so it is followed, never restored.
 export const SETTINGS_PROPS = [

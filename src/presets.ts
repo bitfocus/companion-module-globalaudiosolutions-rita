@@ -9,6 +9,8 @@ import { CHANNEL_COUNT, ENGINE_COUNT, MUTE_GROUP_COUNT } from './state.js'
 // Each one carries the feedback that tells the user what RiTA has, so the button lights up.
 const GREEN = { bgcolor: combineRgb(0, 153, 51), color: combineRgb(255, 255, 255) }
 const RED = { bgcolor: combineRgb(204, 0, 0), color: combineRgb(255, 255, 255) }
+// For a button that cannot be used right now, so it does not look available.
+const DIM = { bgcolor: combineRgb(51, 51, 51), color: combineRgb(130, 130, 130) }
 const BLACK: CompanionButtonStyleProps = {
 	text: '',
 	size: 'auto',
@@ -70,7 +72,9 @@ export function UpdatePresets(self: ModuleInstance): void {
 		},
 	}
 
-	// The signal buttons light up when RiTA has that signal selected.
+	// The signal buttons light up when RiTA has that signal selected. External also goes dim
+	// while Preferences is in Single Channel, where RiTA does not offer it: that feedback comes
+	// after the green one, so it wins while the mode is on.
 	for (const signal of ['Sweep', 'Multi Sweep', 'Pink', 'Spectrum', 'External']) {
 		presets[`generator_signal_${signal.replace(' ', '_').toLowerCase()}`] = {
 			type: 'simple',
@@ -78,7 +82,13 @@ export function UpdatePresets(self: ModuleInstance): void {
 			keywords: ['generator', 'signal'],
 			style: style(signal.replace(' ', '\n')),
 			steps: [{ down: [{ actionId: 'generator_signal', options: { signal } }], up: [] }],
-			feedbacks: [{ feedbackId: 'generator_signal', options: { signal }, style: GREEN }],
+			feedbacks:
+				signal === 'External'
+					? [
+							{ feedbackId: 'generator_signal', options: { signal }, style: GREEN },
+							{ feedbackId: 'settings_transfer_mode', options: { value: 'Single Channel' }, style: DIM },
+						]
+					: [{ feedbackId: 'generator_signal', options: { signal }, style: GREEN }],
 		}
 	}
 

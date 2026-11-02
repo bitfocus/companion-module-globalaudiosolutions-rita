@@ -9,6 +9,7 @@ import {
 	MEASUREMENT_MODE_CHOICES,
 	MUTE_GROUP_CHOICES,
 	REFERENCE_MODE_CHOICES,
+	TRANSFER_MODE_CHOICES,
 	SIGNAL_CHOICES,
 } from './choices.js'
 
@@ -135,6 +136,25 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				},
 			],
 			callback: ({ options }) => self.state.settings.measurementMode === options.value,
+		},
+		settings_transfer_mode: {
+			type: 'boolean',
+			name: 'Transfer mode is',
+			description:
+				'The Transfer mode of Preferences, which RiTA only lets a client read. With Single Channel there is no ' +
+				'reference input and the generator does not offer External, so this is what tells an External button that ' +
+				'it cannot be used right now. Empty on RiTA 2.8.1 and earlier, which do not have it',
+			defaultStyle: GREEN,
+			options: [
+				{
+					type: 'dropdown',
+					id: 'value',
+					label: 'Transfer mode',
+					default: 'Dual Channel',
+					choices: TRANSFER_MODE_CHOICES,
+				},
+			],
+			callback: ({ options }) => self.state.settings.transferMode === options.value,
 		},
 		sync_active: {
 			type: 'boolean',

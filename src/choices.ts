@@ -75,6 +75,9 @@ export const DSP_MODEL_CHOICES = same([
 // The two Preferences modes: with one channel the eight engines share that input.
 export const REFERENCE_MODE_CHOICES = same(['1 Ref. Channel', 'Several Ref. Channels'])
 export const MEASUREMENT_MODE_CHOICES = same(['1 Meas. Channel', 'Several Meas. Channels'])
+// The Transfer mode of Preferences, read only over the API. Single Channel measures without a
+// reference input, which is why it does not offer the External signal.
+export const TRANSFER_MODE_CHOICES = same(['Single Channel', 'Dual Channel'])
 
 // The filter types of RiTA's Equalizer window, copied from RiTA's own table (TiposEQRiTA),
 // with the columns each one uses. With RiTA and Kingray only Parametric, Low Shelf,

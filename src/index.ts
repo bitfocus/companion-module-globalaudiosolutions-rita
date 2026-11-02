@@ -17,6 +17,7 @@ import {
 	ENGINE_COUNT,
 	OPTIONAL_SETTINGS_LABELS,
 	OPTIONAL_SETTINGS_PROPS,
+	READ_ONLY_SETTINGS_PROPS,
 	asList,
 	ENGINE_PROPS,
 	MUTE_GROUP_COUNT,
@@ -122,6 +123,7 @@ export type FeedbacksSchema = {
 	settings_dsp_type: CompanionFeedbackSchema<{ value: string }>
 	settings_reference_mode: CompanionFeedbackSchema<{ value: string }>
 	settings_measurement_mode: CompanionFeedbackSchema<{ value: string }>
+	settings_transfer_mode: CompanionFeedbackSchema<{ value: string }>
 	sync_active: CompanionFeedbackSchema<NoOptions>
 	sync_possible: CompanionFeedbackSchema<NoOptions>
 	measurement_active: CompanionFeedbackSchema<{ engine: string }>
@@ -228,7 +230,12 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> implement
 				const label = OPTIONAL_SETTINGS_LABELS[prop] ?? prop
 				if (err instanceof RitaError && err.code === 'unknown property') {
 					this.optional.set(prop, 'absent')
-					this.log('info', `This RiTA has no ${label} in Preferences: the action that sets it is refused`)
+					this.log(
+						'info',
+						READ_ONLY_SETTINGS_PROPS.includes(prop)
+							? `This RiTA does not report the ${label}: its variable stays empty`
+							: `This RiTA has no ${label} in Preferences: the action that sets it is refused`,
+					)
 				} else {
 					this.log('debug', `Probe ${prop}: ${(err as Error).message}`)
 				}
