@@ -246,6 +246,17 @@ export function UpdateActions(self: ModuleInstance): void {
 			'signal, the gain and the duration have to wait until it finishes. Spectrum does not block them',
 	}
 
+	// The signal list is RiTA's own dropdown (SenalesGeneradorRiTA), and on a RiTA newer than
+	// 2.8.1 it follows Preferences > Transfer: Single Channel measures without a reference input,
+	// so External, which needs one, is not in the list there and is refused.
+	const signalHints = {
+		...generatorBusy,
+		'unknown value':
+			'RiTA is not offering that signal and changed nothing: on a RiTA newer than 2.8.1, External is only in ' +
+			'the list with Dual Channel in Preferences > Transfer, because it needs the reference input that Single ' +
+			'Channel does not use',
+	}
+
 	// Sweep, Multi Sweep, Pink and External measure once and block RiTA until done;
 	// Spectrum and Live TF answer continuous:true and keep running until the generator is stopped.
 	const capture = async (engine: number): Promise<void> => {
@@ -323,10 +334,20 @@ export function UpdateActions(self: ModuleInstance): void {
 				'From RiTA 2.8.1, choosing another signal while Spectrum is running stops it, so the next ' +
 				'capture measures. RiTA takes about a second and a half to stop, and the module shows it the moment it does. A ' +
 				'single measurement, on the other hand, is not interrupted: that same RiTA refuses the signal and changes ' +
-				'nothing while it runs, and the log says so.',
-			options: [{ type: 'dropdown', id: 'signal', label: 'Signal', default: 'Sweep', choices: SIGNAL_CHOICES }],
+				'nothing while it runs, and the log says so. On a RiTA newer than 2.8.1, External needs Dual Channel in ' +
+				'Preferences > Transfer: with Single Channel it is not in the list RiTA offers, and it is refused.',
+			options: [
+				{
+					type: 'dropdown',
+					id: 'signal',
+					label: 'Signal',
+					default: 'Sweep',
+					choices: SIGNAL_CHOICES,
+					tooltip: 'External only exists with Dual Channel in Preferences > Transfer',
+				},
+			],
 			callback: async ({ options }) => {
-				if (await send('set', 'generator', { signal: options.signal }, generatorBusy)) await self.refreshSettings()
+				if (await send('set', 'generator', { signal: options.signal }, signalHints)) await self.refreshSettings()
 			},
 		},
 		generator_gain: {
