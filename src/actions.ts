@@ -925,7 +925,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				{
 					type: 'number',
 					id: 'delay',
-					label: 'Delay (ms). Over 680 needs Auto FFT size; then it reaches the engine length, half as far at 96 kHz',
+					label: 'Delay (ms). The top is 680 with Normal FFT size, 340 at 96 kHz; Auto reaches the engine length',
 					default: 0,
 					min: 0,
 					max: 5440,
